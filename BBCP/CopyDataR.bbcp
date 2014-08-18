@@ -2,16 +2,16 @@
 #set -x
 #--------------------------------------------------------------------------
 #
-# Usage: CopyData.bbcp  BBCPConfig BaseDir SourceDirectory [RemoteUser@]RemoteHost DestinationDirectory [Comments]
+# Usage: CopyData.bbcp  BBCPConfig BaseDir  [RemoteUser@]RemoteHost  SourceDirectory  DestinationDirectory [Comments]
 #
-# the script is designed to  test copying  bigdata from local host to remote host
+# the script is designed to  test copying  bigdata from remote host to local host
 # using utility BBCP
 #
-# Creation date: Sun Jun 15 12:06:01 MSK 2014
+# Creation date: Sat Aug 16 23:42:25 MSK 2014
 # by Anatoly  Oreshkin   email:  anatoly.oreshkin@gmail.com
 #---------------------------------------------------------------------------
 # History of changes:
-# 14.08.2014 RemoteUser added
+# 
 #
 #----------------------------------------------------------------------------
 
@@ -22,12 +22,12 @@ calc_dispersion ()
 {
 # calculate dispersion
 
-# number of files in ${SourceDirectory} 
-NoFiles=`ls -1 ${SourceDirectory} | wc -l`
-# calculate total size of all files in  ${SourceDirectory}
+# number of files in ${FinalDirectory} 
+NoFiles=`ls -1 ${FinalDirectory} | wc -l`
+# calculate total size of all files in  ${FinalDirectory}
 sum=0
 
-for i in `ls -lk ${SourceDirectory}|grep -v "total" | awk '{print $5}'`
+for i in `ls -lk ${FinalDirectory}|grep -v "total" | awk '{print $5}'`
 
    do
      sum=`expr ${sum} + ${i}`
@@ -37,7 +37,7 @@ for i in `ls -lk ${SourceDirectory}|grep -v "total" | awk '{print $5}'`
 AverageFileSize=`expr ${sum} / ${NoFiles}`
 sum2=0
 #  calculate dispersion
-for i in `ls -lk ${SourceDirectory}|grep -v "total"|awk '{print $5}'`
+for i in `ls -lk ${FinalDirectory}|grep -v "total"|awk '{print $5}'`
  do
     DIFF=`expr ${i} - ${AverageFileSize}`
     DIFF2=`expr ${DIFF} \* ${DIFF}`
@@ -62,16 +62,16 @@ if [ "$#" -lt 5 ]; then
 
     cat <<END
 ------------------------------------------------------------------------------------------------------------
-     the script is designed to  test copying  bigdata from local host to remote host using utility BBCP
+     the script is designed to  test copying  bigdata from remote host to local host using utility BBCP
 
-  Usage: $0   <bbcp_config_file> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> [<Comments>]
+  Usage: $0   <bbcp_config_file> <BaseDir>  [<RemoteUser>@]<RemoteHost> <SourceDirectory> <DestinationDirectory> [<Comments>]
 
                bbcp_config_file  -- bbcp configuration file for tuning bbcp, may be empty
                BaseDir -- directory where to write transfer proccess logging information
-               SourceDirectory -- directory/single file  on local host to be transferred
-               RemoteUser -- destination remote user, if omitted local user selected
-               RemoteHost -- destination remote host name
-               DestinationDirectory -- destination directory on RemoteHost or /dev/null
+               RemoteUser -- source remote user, if omitted local user selected
+               RemoteHost -- source remote host name
+               SourceDirectory -- source directory/single file on remote host to be transfered
+               DestinationDirectory -- destination directory on local host
                Comments -- comments 
  ------------------------------------------------------------------------------------------------------------
 END
@@ -82,52 +82,33 @@ LOG_FILE=/tmp/bbcp-Log-`date +"%Y-%m-%d_%H:%M:%S"`
 (
 BBCPConfig=$1
 BASE_DIR=$2
-SourceDirectory=$3
-# REMOTE_USER@REMOTE_HOST   $4
+# REMOTE_USER@REMOTE_HOST   $3
 # check if REMOTE_USER specified
-REMOTE_HOST=`echo $4 | awk -F"@" '{print $2}'`
+REMOTE_HOST=`echo $3 | awk -F"@" '{print $2}'`
 if [ -z ${REMOTE_HOST} ]; then
-  REMOTE_HOST=$4
+  REMOTE_HOST=$3
   REMOTE_USER=${LOCAL_USER}
 else
-  REMOTE_USER=`echo $4 | awk -F"@" '{print $1}'`
-  REMOTE_HOST=`echo $4 | awk -F"@" '{print $2}'`
+  REMOTE_USER=`echo $3 | awk -F"@" '{print $1}'`
+  REMOTE_HOST=`echo $3 | awk -F"@" '{print $2}'`
 fi
 
+SourceDirectory=$4
 DestinationDirectory=$5
+FinalDirectory=${DestinationDirectory}/`basename ${SourceDirectory}`
 shift; shift; shift; shift; shift;  
 comments="$@"  
 
 
-# directory size
-DirSize=`du -s ${SourceDirectory}  | awk '{print $1}'`
-
-# number of files
-NoFiles=`ls -1 ${SourceDirectory} | wc -l`
-
-# average file size
-AverageFileSize=0
-
-# File size dispersion
-FileSizeDispersion=0
-
-# calculate files size dispersion
-calc_dispersion
-
-# file with  list of files to be transferred
-FileList=/tmp/bbcp$$
-
-find ${SourceDirectory} -type f -print > ${FileList}
-
 # subdirectory to write  logging  information
-SUB_BASE_DIR=${BASE_DIR}/`basename ${0}`.${LOCAL_HOST}.${REMOTE_HOST}.`date +"%Y-%m-%d_%H:%M:%S"`
+SUB_BASE_DIR=${BASE_DIR}/`basename ${0}`.${REMOTE_HOST}.${LOCAL_HOST}.`date +"%Y-%m-%d_%H:%M:%S"`
 
 #SOSREPORT=${SUB_BASE_DIR}/SOSREPORT.${LOCAL_HOST}
-PING=${SUB_BASE_DIR}/PING.${LOCAL_HOST}.${REMOTE_HOST}
-TRACEROUTE=${SUB_BASE_DIR}/TRACEROUTE.${LOCAL_HOST}.${REMOTE_HOST}
-COMMENTS=${SUB_BASE_DIR}/COMMENTS.${LOCAL_HOST}.${REMOTE_HOST}
-ABSTRACT=${SUB_BASE_DIR}/ABSTRACT.${LOCAL_HOST}.${REMOTE_HOST}
-LOG=${SUB_BASE_DIR}/LOG.BBCP.${LOCAL_HOST}.${REMOTE_HOST}
+PING=${SUB_BASE_DIR}/PING.${REMOTE_HOST}.${LOCAL_HOST}
+TRACEROUTE=${SUB_BASE_DIR}/TRACEROUTE.${REMOTE_HOST}.${LOCAL_HOST}
+COMMENTS=${SUB_BASE_DIR}/COMMENTS.${REMOTE_HOST}.${LOCAL_HOST}
+ABSTRACT=${SUB_BASE_DIR}/ABSTRACT.${REMOTE_HOST}.${LOCAL_HOST}
+LOG=${SUB_BASE_DIR}/LOG.BBCP.${REMOTE_HOST}.${LOCAL_HOST}
 
 #
 # Parameters of BBCP
@@ -150,13 +131,12 @@ LOG=${SUB_BASE_DIR}/LOG.BBCP.${LOCAL_HOST}.${REMOTE_HOST}
 
 
 COMMAND_LINE="bbcp  --config ${BBCPConfig} -v -V --progress  2 -r  --nodns  --logfile ${LOG} \
-  ${SourceDirectory} ${REMOTE_USER}@${REMOTE_HOST}:${DestinationDirectory}"
-#  --infiles  ${FileList} ${REMOTE_USER}@${REMOTE_HOST}:${DestinationDirectory}"
+   ${REMOTE_USER}@${REMOTE_HOST}:${SourceDirectory}     ${DestinationDirectory}"
              
 
 
 #
-#  create subdirectory with name ScriptName.LocalHost.RemoteHost.DateTime
+#  create subdirectory with name ScriptName.RemoteHost.LocalHost.DateTime
 # 
 
 echo 
@@ -188,32 +168,20 @@ cat  ${BBCPConfig} >> ${COMMENTS}
 # fill in ABSTRACT content 
 echo "Start time = `date`" >> ${ABSTRACT}
 echo "Command line = ${COMMAND_LINE}" >> ${ABSTRACT}
-echo "Total data size to transfer(KB) = ${DirSize}" >> ${ABSTRACT}
-echo "Number of files = ${NoFiles}" >> ${ABSTRACT}
-echo "Source directory(or single file) with files = ${SourceDirectory}" >> ${ABSTRACT}
-echo "Average file size(KB) = ${AverageFileSize}" >> ${ABSTRACT}
-echo "File size dispersion = ${FileSizeDispersion}" >> ${ABSTRACT}
-echo "Local host name = ${LOCAL_HOST}" >> ${ABSTRACT}
-echo "Remote host name = ${REMOTE_HOST}" >> ${ABSTRACT}
-echo "Remote host directory = ${DestinationDirectory}" >> ${ABSTRACT}
 
 #
-#  transferring data to remote host
+#  transferring data from  remote host to local host
 #
 
    cat <<END
 
- Beginning  data  transfer to ${REMOTE_HOST} ...  
+ Beginning  data  transfer from  remote host ${REMOTE_HOST} to local host ${LOCAL_HOST} ...  
  Start time =  `date`
  Command line = ${COMMAND_LINE}
- Local host name = ${LOCAL_HOST}
- Source directory(or single file) with files = ${SourceDirectory} 
- Total data size to transfer (KB) = ${DirSize}
- Number of files = ${NoFiles}
- Average file size (KB) = ${AverageFileSize}
- File size dispersion = ${FileSizeDispersion}
  Remote host name = ${REMOTE_HOST}
- Remote host directory = ${DestinationDirectory}
+ Remote source  directory(or single file) with files = ${SourceDirectory}
+ Local host name = ${LOCAL_HOST}
+ Destination  local directory  = ${DestinationDirectory} 
 
 END
 
@@ -223,7 +191,33 @@ if ( ${COMMAND_LINE} ); then
 # data transfer success
  ENDTIME=$(date +"%s")  
  ELAPSEDTIME=$((${ENDTIME}-${STARTTIME}))
+
+# final(destination)  directory size
+DirSize=`du -s ${FinalDirectory}  | awk '{print $1}'`
+
+# number of files in final(destination) directory
+NoFiles=`ls -1 ${FinalDirectory} | wc -l`
+
+# average file size
+AverageFileSize=0
+
+# File size dispersion
+FileSizeDispersion=0
+
+# calculate files size dispersion
+calc_dispersion
+
  TransferRate=`expr ${DirSize} / ${ELAPSEDTIME}`
+
+# fill in ABSTRACT content 
+echo "Total data size to transfer(KB) = ${DirSize}" >> ${ABSTRACT}
+echo "Number of files = ${NoFiles}" >> ${ABSTRACT}
+echo "Remote source directory(or single file) with files = ${SourceDirectory}" >> ${ABSTRACT}
+echo "Average file size(KB) = ${AverageFileSize}" >> ${ABSTRACT}
+echo "File size dispersion = ${FileSizeDispersion}" >> ${ABSTRACT}
+echo "Local host name = ${LOCAL_HOST}" >> ${ABSTRACT}
+echo "Remote host name = ${REMOTE_HOST}" >> ${ABSTRACT}
+echo "Local  destination  directory = ${DestinationDirectory}" >> ${ABSTRACT}
 
  echo "Data size transferred (KB) = ${DirSize}" >> ${ABSTRACT}
  echo " Data size transferred (KB)= ${DirSize}"
@@ -238,6 +232,16 @@ else
 # data transfer failed
  ENDTIME=$(date +"%s")
  ELAPSEDTIME=$((${ENDTIME}-${STARTTIME}))
+# fill in ABSTRACT content 
+echo "Total data size to transfer(KB) = not avaiable" >> ${ABSTRACT}
+echo "Number of files = not avaiable" >> ${ABSTRACT}
+echo "Remote source directory(or single file) with files = ${SourceDirectory}" >> ${ABSTRACT}
+echo "Average file size(KB) = not available" >> ${ABSTRACT}
+echo "File size dispersion = not avaiable" >> ${ABSTRACT}
+echo "Local host name = ${LOCAL_HOST}" >> ${ABSTRACT}
+echo "Remote host name = ${REMOTE_HOST}" >> ${ABSTRACT}
+echo "Local  destination  directory = ${DestinationDirectory}" >> ${ABSTRACT}
+
  echo "Data size transferred (KB) = not available" >> ${ABSTRACT}
  echo " Data size transferred (KB) = not available"
  echo "End time = `date`" >> ${ABSTRACT}
@@ -252,7 +256,7 @@ fi
 #sosreport > ${SOSREPORT}
 
 echo " Creating sosreport ..."
-sosreport --batch --tmp-dir ${SUB_BASE_DIR} --name ${LOCAL_HOST}.${REMOTE_HOST}  > /dev/null 2>&1
+sosreport --batch --tmp-dir ${SUB_BASE_DIR} --name ${REMOTE_HOST}.${LOCAL_HOST}  > /dev/null 2>&1
 echo " Creating sosreport completed"
 
 # ping remote host

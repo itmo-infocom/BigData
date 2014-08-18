@@ -1,0 +1,66 @@
+CopyDataR.bbcp
+-------------
+
+This bash script  is designed to test transfer of big size data (BigData) from remote host to local host
+using utility 'bbcp' over Internet.
+Detailed description of bbcp parameters can be found on the page 
+http://www.slac.stanford.edu/~abh/bbcp/
+
+This script is run with the following input parameters:
+
+CopyDataR.bbcp <bbcp_config_file> <BaseDir> [<RemoteUser>@]<RemoteHost> <SourceDirectory>  <DestinationDirectory/dev/null> [<Comments>]
+
+where:
+
+    bbcp_config_file -- bbcp configuration file (full path), it can be empty. It is used for bbcp performance tuning  
+    BaseDir -- directory (full path) where the script creates subdirectory to store input and logging information
+    RemoteUser -- remote user on remote host, if omitted, local user selected
+    RemoteHost -- remote host that data to be transferred from
+    SourceDirectory -- directory or single file (full path) on remote host containing files to be transferred to local 
+                       host. This directory is created using script 'create-test-file-dispersion.sh' (or 
+                       create-test-file-sigma.sh). 
+                       Files sizes are normally distributed.
+                       Script 'create-test-file-dispersion.sh' can be found on the page
+                       https://github.com/itmo-infocom/BigData/
+    DestinationDirectory/dev/null -- directory (full path) on local host where transferred data to be written. This 
+                                     directory must be created beforehand or it can be just /dev/null
+    Comments -- your comments, optional parameter
+ 
+
+The script CopyData.bbcp creates under directory <BaseDir> subdirectory with name 
+
+CopyDataR.bbcp.<RemoteHost>.<LocalHost>.<date>_<time>
+
+in which the following files are created:
+
+ ABSTRACT.<RemoteHost>.<LocalHost>
+ COMMENTS.<RemoteHost>.<LocalHost>
+ LOG.BBCP.<RemoteHost>.<LocalHost>
+ PING.<RemoteHost>.<LocalHost>
+ TRACEROUTE.<RemoteHost>.<LocalHost>
+ sosreport-<RemoteHost>.<LocalHost>-<date><time>-<hash>.tar.xz
+
+The file ABSTRACT.<RemoteHost>.<LocalHost> has such content:
+
+  Start time = <date time>
+  Command line = <bbcp command line>
+  Total data size to transfer(KB) = <value>
+  Number of files = <value>
+  Source directory with files = <value>
+  Average file size(KB) = <value>
+  File size dispersion = <value>
+  Local host name = <value>
+  Remote host name = <value>
+  Remote host directory = <value>
+  Data size transferred (KB) = <value>
+  End time = <date time>
+  Completion = YES/ABNORMAL
+  Average transfer speed (KB/sec) = <value>
+
+The file COMMENTS.<RemoteHost>.<LocalHost> is filled with <Comments> + content of <bbcp_config_file>   
+The file LOG.BBCP.<RemoteHost>.<LocalHost> is filled with the output (log) of bbcp.
+The file PING.<RemoteHost>.<LocalHost> is filled with the output of 'ping -c 10 <RemoteHost>'
+The file TRACEROUTE.<RemoteHost>.<LocalHost> is filled with the output of 'traceroute <RemoteHost>'
+The file sosreport-<RemoteHost>.<LocalHost>-<date><time>-<hash>.tar.xz is created by command
+sosreport --batch --tmp-dir CopyDataR.bbcp.<RemoteHost>.<LocalHost>.<date>_<time> --name <RemoteHost>.<LocalHost>
+

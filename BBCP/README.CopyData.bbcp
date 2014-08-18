@@ -8,17 +8,18 @@ http://www.slac.stanford.edu/~abh/bbcp/
 
 This script is run with the following input parameters:
 
-CopyData.bbcp <bbcp_config_file> <BaseDir> <SourceDirectory> <RemoteHost> <DestinationDirectory/dev/null> [<Comments>]
+CopyData.bbcp <bbcp_config_file> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> [<Comments>]
 
 where:
 
     bbcp_config_file -- bbcp configuration file (full path), it can be empty. It is used for bbcp performance tuning  
     BaseDir -- directory (full path) where the script creates subdirectory to store input and logging information
-    SourceDirectory -- directory (full path) containing files to be transferred to remote host. This directory is created 
+    SourceDirectory -- directory or single file (full path) containing files to be transferred to remote host. This directory is created 
                       using script 'create-test-file-dispersion.sh' (or create-test-file-sigma.sh). 
                       Files sizes are normally distributed.
                       Script 'create-test-file-dispersion.sh' can be found on the page
                               https://github.com/itmo-infocom/BigData/
+    RemoteUser -- remote user on remote host, if omitted, local user selected
     RemoteHost -- remote host that data to be transferred to
     DestinationDirectory/dev/null -- directory (full path) on remote host where transferred data to be written. This 
                                      directory must be created beforehand or it can be just /dev/null
