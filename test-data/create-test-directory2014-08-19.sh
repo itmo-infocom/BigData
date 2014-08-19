@@ -20,7 +20,7 @@ function print_usage() {
 E.g. 2 ways to creating 1TiB directory with 100MiB-files, dispersion 50 MiB: 
 
 $0 -n test -z 1073741824 -f 102400 -d 51200 -s /dev/zero
-$0 -n test -z 1024       -f 100    -d 50    -s /dev/zero -b 1G 
+$0 -n test -z 1048576    -f 100    -d 50    -s /dev/zero -b 1M 
 
 NOTE: If you change block-size, check your free disk space before starting.
 
