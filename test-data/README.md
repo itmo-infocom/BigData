@@ -1,5 +1,41 @@
 BigData
 =======
+
+Script "create-test-directory.sh" creats some test directory. Test directory includes some files. Number of files in directory depends from total size of the directory and average size of files inside. You can set parameters as you need:
+
+        "-h"|"--help"         show this text
+        "-q"|"--quite"        by default false
+        "-l"|"--logfile"      by default $0\.log
+        "-n"|"--dirname"      by default ./test_directory
+        "-z"|"--dirsize"      by default 1024 KiB
+        "-f"|"--filesize"     by default 102 KiB
+        "-d"|"--dispersion"   by default 10 KiB
+        "-s"|"--sample"       by default /dev/urandom
+        "-b"|"--block-size"   by default 1K
+	     
+Filesizes are normal (gauss) distibuted. You can set parameters of distribution by arguments "-f"|"--filesize"(average filesize) and "-d"|"--dispersion"(+- range). 
+
+E.g. if you set -f 100 -d 10, filesizes will be from ~90 to ~110.
+
+Filenames are simple - 1, 2, 3, etc.
+
+By default filesizes in KiB, but you can change it by argument "-b"|"--block-size". 
+
+E.g. -b 1M OR -b 1G. 
+
+Note, that arguments -z"|"--dirsize", "-f"|"--filesize", "-d"|"--dispersion" also will be changed to MiB OR GiB. 
+
+Each file in test directory is a different copy from some sample file. Sample file may be created from /dev/urandom (by default) OR /dev/zero (if you need to create test directory very fast) OR /path/to/another/file (if you need to test the transfer of special-types-files). 
+
+E.g. -s /dev/urandom OR --sample /dev/zero OR -s /path/to/another/file.
+
+All messages are log into logfile (by default "create-test-directory.sh.log"). To change the logfile use argument "-l"|"--logfile". 
+
+E.g. -l ./somefile.log.000 OR --logfile /home/user/logfile.000
+
+
+
+=======
 2 bash scripts for testing BigData tranfer systems.
 
 Each script create a directory that contain many different files that will be transfered in our tests.
