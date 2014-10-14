@@ -22,7 +22,7 @@ EOF
 
 Path_to_Logs='./'
 Path_to_Data_File='./data'
-Path_to_Output_File='./plot.`date +%x-%T`'
+Path_to_Output_File='./plot.`date +%x-%H-%M-%S`'
 XLabel_Name='Number of measurement'
 YLabel_Name='Average transfer speed'
 YLabel_Min=0
@@ -51,9 +51,9 @@ done
 grep -r 'Average transfer speed' ${Path_to_Logs} | awk '{print $6}' | cat > ${Path_to_Data_File}
 
 gnuplot <<HERE
-set terminal jpeg 
+set terminal postscript landscape color "Times-Roman" 18 linewidth 2 
 set timestamp "%d/%m/%y %H:%M"                             
-set output "${Path_to_Output_File}.jpg"
+set output "${Path_to_Output_File}.ps"
 set grid back  lt 0 lw 1
 set xlabel "${XLabel_Name}" 
 set bmargin 4
