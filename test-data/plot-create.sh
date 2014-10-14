@@ -8,7 +8,7 @@ function print_usage() {
         "-t"|"--title"       ) Title=./data
         "-l"|"--logdir"      ) Path_to_Logs=./
         "-d"|"--data"        ) Path_to_Data_File=./data
-        "-o"|"--output"      ) Path_to_Output_File=./plot.`date +%x-%T`
+        "-o"|"--output"      ) Path_to_Output_File=./plot.`date +%x-%H-%M-%S`
         "-x"|"--xlabel"      ) XLabel_Name=Number of measurement
         "-y"|"--ylabel"      ) YLabel_Name=Average transfer speed
         "-i"|"--ymin"        ) YLabel_Min=0
