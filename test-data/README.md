@@ -3,8 +3,8 @@ BigData
 
 Script "plot-create.sh" creats plot using gnuplot. You can set parameters as you need:
 
-	key			default value
-	"-h"|"--help"        ) print_usage
+		key			default value
+		"-h"|"--help"        ) print_usage
         "-t"|"--title"       ) Title=./data
         "-l"|"--logdir"      ) Path_to_Logs=./
         "-d"|"--data"        ) Path_to_Data_File=./data
