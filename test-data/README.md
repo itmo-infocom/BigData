@@ -15,6 +15,7 @@ Script "plot-create.sh" creats plot using gnuplot. You can set parameters as you
         "-a"|"--ymax"        ) YLabel_Max=500000
         
 Example: ./plot-create.sh -o /home/arsen/test.plot -i 300000 -a 700000 --title BigData -x number -y speed
+output file: http://sdn.ifmo.ru/Members/kairkanov/test.plot/view
 
 =======
 
