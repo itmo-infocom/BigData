@@ -1,6 +1,23 @@
 BigData
 =======
 
+Script "plot-create.sh" creats plot using gnuplot. You can set parameters as you need:
+
+	key			default value
+	"-h"|"--help"        ) print_usage
+        "-t"|"--title"       ) Title=./data
+        "-l"|"--logdir"      ) Path_to_Logs=./
+        "-d"|"--data"        ) Path_to_Data_File=./data
+        "-o"|"--output"      ) Path_to_Output_File=./plot.DD.MM.YYY-HH:MM:SS
+        "-x"|"--xlabel"      ) XLabel_Name=Number of measurement
+        "-y"|"--ylabel"      ) YLabel_Name=Average transfer speed
+        "-i"|"--ymin"        ) YLabel_Min=0
+        "-a"|"--ymax"        ) YLabel_Max=500000
+        
+Example: ./plot-create.sh -o /home/arsen/test.plot -i 300000 -a 700000 --title BigData -x number -y speed
+
+=======
+
 Script "create-test-directory.sh" creats some test directory. Test directory includes some files. Number of files in directory depends from total size of the directory and average size of files inside. You can set parameters as you need:
 
         "-h"|"--help"         show this text
@@ -36,20 +53,6 @@ E.g. -l ./somefile.log.000 OR --logfile /home/user/logfile.000
 
 
 =======
-2 bash scripts for testing BigData tranfer systems.
-
-Each script create a directory that contain many different files that will be transfered in our tests.
-File sizes is normally distributed.
-User can set the average value and dispersion (or sigma - in the different script).
-Filenames is sipmle - 1, 2, 3, etc.
-dd command copies bytes from sample to new files in directory.
-
-Each script has 5 parameters, that must be entered:
-1 - directory name - select or create new directoty in current directory.
-2 - directory size - summary size of all files in directory (the real size may be a little smaller).
-3 - average size of files that will be created in our directory.
-4 - dispersion - setting sigma or dispersion value of file sizes.
-5 - sample - setting the path to sample-file (any compressed file like .zip or .mp4). 
 
 Example stdout of script:
 
