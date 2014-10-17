@@ -1,0 +1,233 @@
+
+globus-url-copy [options] <sourceURL> <destURL>
+globus-url-copy [options] -f <filename>
+
+<sourceURL> may contain wildcard characters * ? and [ ] character ranges
+in the filename only.
+Any url specifying a directory must end with a forward slash '/'
+
+If <sourceURL> is a directory, all files within that directory will
+be copied.
+<destURL> must be a directory if multiple files are being copied.
+
+Note:  If the ftp server from the source url does not support the MLSD
+       command, this client will attempt to transfer subdirectories as
+       files, resulting in an error.  Recursion is not possible in this
+       case, but you can use the -c (continue on errors) option in order
+       to transfer the regular files from the top level directory.
+       **GridFTP servers prior to version 1.17 (Globus Toolkit 3.2)
+         do not support MLSD.
+
+OPTIONS
+  -help | -usage
+       Print help
+  -version
+       Print the version of this program
+  -versions
+       Print the versions of all modules that this program uses
+  -c | -continue-on-error
+       Do not die after any errors.  By default, program will exit after
+       most errors.
+  -a | -ascii
+       Convert the file to/from ASCII format to/from local file format
+  -b | -binary
+       Do not apply any conversion to the files. *default*
+  -f <filename>
+       Read a list of url pairs from filename.  Each line should contain
+       <sourceURL> <destURL>
+       Enclose URLs with spaces in double quotes (").
+       Blank lines and lines beginning with # will be ignored.
+  -cd | -create-dest
+       Create destination directory if needed
+  -r | -recurse
+       Copy files in subdirectories
+  -fast
+       Recommended when using GridFTP servers. Use MODE E for all data
+       transfers, including reusing data channels between list and transfer
+       operations.
+  -t <transfer time in seconds>
+       Run the transfer for this number of seconds and then end.
+       Useful for performance testing or forced restart loops.
+  -q | -quiet 
+       Suppress all output for successful operation
+  -v | -verbose 
+       Display urls being transferred
+  -vb | -verbose-perf 
+       During the transfer, display the number of bytes transferred
+       and the transfer rate per second.  Show urls being transferred
+  -dbg | -debugftp 
+       Debug ftp connections.  Prints control channel communication
+       to stderr
+  -rst | -restart 
+       Restart failed ftp operations.
+  -rst-retries <retries>
+       The maximum number of times to retry the operation before giving
+       up on the transfer.  Use 0 for infinite.  Default is 5.
+  -rst-interval <seconds>
+       The interval in seconds to wait after a failure before retrying
+       the transfer.  Use 0 for an exponential back off.  Default is 0.
+  -rst-timeout <seconds>
+       Maximum time after a failure to keep retrying.  Use 0 for no
+       timeout.  Default is 0.
+  -stall-timeout | -st <seconds>
+       How long before canceling/restarting a transfer with no data
+       movement.  Set to 0 to disable.  Default is 600 seconds.
+  -df <filename> | -dumpfile <filename>
+       Path to file where untransferred urls will be saved for later
+       restarting.  Resulting file is the same format as the -f input file.
+       If file exists, it will be read and all other url input will be
+       ignored.
+  -do <filename> | -dump-only <filename>
+       Perform no write operations on the destination.  Instead, all files
+       that would be transferred are enumerated and dumped to the specified
+       file.  Resulting file is the same format as the -f input file.
+       Note: if you intend to use this file as input for a future transfer,
+       the -create-dest option will be required if any destination
+       directories do not already exist.
+  -rp | -relative-paths
+      The path portion of ftp urls will be interpreted as relative to the
+      user's starting directory on the server.  By default, all paths are
+      root-relative.  When this flag is set, the path portion of the ftp url
+      must start with %%2F if it designates a root-relative path.
+  -s  <subject> | -subject <subject>
+       Use this subject to match with both the source and dest servers
+  -ss <subject> | -source-subject <subject>
+       Use this subject to match with the source server
+  -ds <subject> | -dest-subject <subject>
+       Use this subject to match with the destination server
+  -tcp-bs <size> | -tcp-buffer-size <size>
+       specify the size (in bytes) of the buffer to be used by the
+       underlying ftp data channels
+  -bs <block size> | -block-size <block size>
+       specify the size (in bytes) of the buffer to be used by the
+       underlying transfer methods
+  -p <parallelism> | -parallel <parallelism>
+       specify the number of parallel data connections should be used.
+  -notpt | -no-third-party-transfers
+       turn third-party transfers off (on by default)
+  -nodcau | -no-data-channel-authentication
+       turn off data channel authentication for ftp transfers
+  -dcsafe | -data-channel-safe
+       set data channel protection mode to SAFE
+  -dcpriv | -data-channel-private
+       set data channel protection mode to PRIVATE
+  -off | -partial-offset
+       offset for partial ftp file transfers, defaults to 0
+  -len | -partial-length
+       length for partial ftp file transfers, used only for the source url,
+       defaults the full file.
+  -list <url to list>
+  -stripe
+       enable striped transfers on supported servers
+  -striped-block-size | -sbs
+       set layout mode and block size for striped transfers
+       If not set, server defaults will be used.
+       If set to 0, Partitioned mode will be used.
+       If set to >0, Blocked mode will be used, with this as the block size.
+  -ipv6
+       use ipv6 when available (EXPERIMENTAL)
+  -udt
+       Use UDT, a reliable udp based transport protocol, for data transfers
+  -no-g2 | -nogridftp2
+       disable use of GridFTP v2 protocol enhancements
+  -dp | -delayed-pasv
+       enable delayed passive
+  -mn | -module-name <gridftp storage module name>
+      Set the backend storage module to use for both the source and
+      destination in a GridFTP transfer
+  -mp | -module-parameters <gridftp storage module parameters>
+      Set the backend storage module arguments to use for both the source
+      and destination in a GridFTP transfer
+  -smn | -src-module-name <gridftp storage module name>
+      Set the backend storage module to use for the source in a GridFTP
+      transfer
+  -smp | -src-module-parameters <gridftp storage module parameters>
+      Set the backend storage module arguments to use for the source
+      in a GridFTP transfer
+  -dmn | -dst-module-name <gridftp storage module name>
+      Set the backend storage module to use for the destination in a GridFTP
+      transfer
+  -dmp | -dst-module-parameters <gridftp storage module parameters>
+      Set the backend storage module arguments to use for the destination
+      in a GridFTP transfer
+  -aa | -authz-assert <authorization assertion file>
+      Use the assertions in this file to authorize the access with both
+      source and dest servers
+  -saa | -src-authz-assert <authorization assertion file>
+      Use the assertions in this file to authorize the access with source
+      server
+  -daa | -dst-authz-assert <authorization assertion file>
+      Use the assertions in this file to authorize the access with dest
+      server
+  -cache-aa | -cache-authz-assert
+      Cache the authz assertion for subsequent transfers
+  -cache-saa | -cache-src-authz-assert
+      Cache the src authz assertion for subsequent transfers
+  -cache-daa | -cache-dst-authz-assert
+      Cache the dst authz assertion for subsequent transfers
+  -pipeline | -pp
+      Enable pipelining support for multi-file ftp transfers.  Currently
+      third-party transfers benefit from this. *EXPERIMENTAL*
+  -concurrency | -cc
+      Number of concurrent ftp connections to use for multiple transfers.
+  -nl-bottleneck | -nlb
+      Use NetLogger to estimate speeds of disk and network read/write
+      system calls, and attempt to determine the bottleneck component
+  -src-pipe | -SP <command line>
+     This will use the popen xio driver on the server to run the given
+     command, and the output (stdout) produced will be the data transferred.
+     The path part of the source url is ignored and only the host/port is used.
+     Requires a server configured to allow both the popen driver and the
+     requested command.  Do not use with -src-fsstack.
+  -dst-pipe | -DP <command line>
+     This will use the popen xio driver on the server to run the given
+     command, with the data transferred as its input (stdin).  The
+     path part of the dest url is ignored and only the host/port is used.
+     Requires a server configured to allow both the popen driver and the
+     requested command.  Do not use with -dst-fsstack.
+  -pipe <command line>
+     sets both -src-pipe and -dst-pipe to the same thing
+  -dcstack | -data-channel-stack
+     Set the XIO driver stack for the network on both the source and
+     and the destination.  Both must be gridftp servers
+  -fsstack | -file-system-stack
+     Set the XIO driver stack for the disk on both the source and
+     and the destination.  Both must be gridftp servers
+  -src-dcstack | -source-data-channel-stack
+     Set the XIO driver stack for the network on the source GridFTP server.
+  -src-fsstack | -source-file-system-stack.
+     Set the XIO driver stack for the disk on the source GridFTP server.
+  -dst-dcstack | -dest-data-channel-stack
+     Set the XIO driver stack for the network on the destination GridFTP server.
+  -dst-fsstack | -dest-file-system-stack
+     Set the XIO driver stack for the disk on the destination GridFTP server.
+  -cred <path to credentials or proxy file>
+  -src-cred | -sc <path to credentials or proxy file>
+  -dst-cred | -dc <path to credentials or proxy file>
+     Set the credentials to use for source, destination, 
+     or both ftp connections.
+  -data-cred <path to credentials or proxy file>
+     Set the credential to use for data connection.  A value of 'auto' will
+     generate a temporary self-signed credential.  This may be used with
+     any authentication method, but the server must support the DCSC command.
+  -af <filename> | -alias-file <filename>
+       File with mapping of logical host aliases to lists of physical
+       hosts.  When used with multiple concurrent connections, each
+       connection uses the next host in the list.
+       Each line should either be an alias, noted with the @
+       symbol, or a hostname[:port].
+       Currently, only the aliases @source and @destination are valid,
+       and they are used for every source or destination url.
+  -sync
+       Only transfer files where the destination does not exist or differs
+       from the source.  -sync-level controls how to determine if files
+       differ.
+  -sync-level <number>
+       Choose criteria for determining if files differ when performing a
+       sync transfer.  Level 0 will only transfer if the destination does
+       not exist.  Level 1 will transfer if the size of the destination
+       does not match the size of the source.  Level 2 will transfer if
+       the timestamp of the destination is older than the timestamp of the
+       source, or the sizes do not match.  Level 3 will perform a checksum of
+       the source and destination and transfer if the checksums do not match,
+       or the sizes do not match.  The default sync level is 2.

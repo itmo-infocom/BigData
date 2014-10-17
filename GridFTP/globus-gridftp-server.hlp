@@ -1,0 +1,663 @@
+
+ ===========================  Informational Options  ==========================
+
+ -h -help                          Show usage information and exit.
+  Default: FALSE                   (help)
+
+ -hh -longhelp                     Show more usage information and exit.
+  Default: FALSE                   (longhelp)
+
+ -v -version                       Show version information for the server and
+  Default: FALSE                   exit.
+                                   (version)
+
+ -V -versions                      Show version information for all loaded
+  Default: FALSE                   globus libraries and exit.
+                                   (versions)
+
+
+ =============================  Modes of Operation  ===========================
+
+ -i -inetd                         Run under an inetd service.
+  Default: FALSE                   (inetd)
+
+ -s -daemon                        Run as a daemon.  All connections will fork
+  Default: TRUE                    off a new process and setuid if allowed.
+                                   (daemon)
+
+ -S -detach                        Run as a background daemon detached from any
+  Default: FALSE                   controlling terminals.
+                                   (detach)
+
+ -ssh                              Run over a connected ssh session.
+  Default: FALSE                   (ssh)
+
+ -exec <string>                    For statically compiled or
+  Default: not set                 non-GLOBUS_LOCATION standard binary
+                                   locations, specify the full path of the
+                                   server binary here.  Only needed when run in
+                                   daemon mode.
+                                   (exec)
+
+ -chdir                            Change directory when the server starts.
+  Default: TRUE                    This will change directory to the dir
+                                   specified by the chdir_to option.
+                                   (chdir)
+
+ -chdir-to <string>                Directory to chdir to after starting.  Will
+  Default: not set                 use / if not set.  Note that this is the
+                                   directory of the process, not the client's
+                                   home directory.
+                                   (chdir_to)
+
+ -threads <number>                 Enable threaded operation and set the number
+  Default: not set                 of threads.  The default is 0, which is
+                                   non-threaded.  When threading is required, a
+                                   thread count of 1 or 2 should be sufficient.
+
+ -f -fork                          Server will fork for each new connection. 
+  Default: TRUE                    Disabling this option is only recommended
+                                   when debugging. Note that non-forked servers
+                                   running as 'root' will only accept a single
+                                   connection, and then exit.
+                                   (fork)
+
+ -1 -single                        Exit after a single connection.
+  Default: FALSE                   (single)
+
+ -chroot-path <string>             Path to become the new root after
+  Default: not set                 authentication.  This path must contain a
+                                   valid certificate structure, /etc/passwd,
+                                   and /etc/groups.  The command
+                                   globus-gridftp-server-setup-chroot can help
+                                   create a suitable directory structure.
+                                   (chroot_path)
+
+
+ ============  Authentication, Authorization, and Security Options  ===========
+
+ -auth-level <number>              Add levels together to use more than one.  0
+  Default: not set                 = Disables all authorization checks. 1 =
+                                   Authorize identity. 2 = Authorize all
+                                   file/resource accesses. 4 = Disable changing
+                                   process uid to authenticated user (no
+                                   setuid) -- DO NOT use this when process is
+                                   started as root.  If not set uses level 2
+                                   for front ends and level 1 for data nodes. 
+                                   Note that levels 2 and 4 imply level 1 as
+                                   well.
+                                   (auth_level)
+
+ -ipc-allow-from <string>          Only allow connections from these source ip
+  Default: not set                 addresses.  Specify a comma separated list
+                                   of ip address fragments.  A match is any ip
+                                   address that starts with the specified
+                                   fragment.  Example: '192.168.1.' will match
+                                   and allow a connection from 192.168.1.45. 
+                                   Note that if this option is used any address
+                                   not specifically allowed will be denied.
+                                   (ipc_allow_from)
+
+ -ipc-deny-from <string>           Deny connections from these source ip
+  Default: not set                 addresses. Specify a comma separated list of
+                                   ip address fragments.  A match is any ip
+                                   address that starts with the specified
+                                   fragment.  Example: '192.168.2.' will match
+                                   and deny a connection from 192.168.2.45.
+                                   (ipc_deny_from)
+
+ -allow-from <string>              Only allow connections from these source ip
+  Default: not set                 addresses.  Specify a comma separated list
+                                   of ip address fragments.  A match is any ip
+                                   address that starts with the specified
+                                   fragment.  Example: '192.168.1.' will match
+                                   and allow a connection from 192.168.1.45. 
+                                   Note that if this option is used any address
+                                   not specifically allowed will be denied.
+                                   (allow_from)
+
+ -deny-from <string>               Deny connections from these source ip
+  Default: not set                 addresses. Specify a comma separated list of
+                                   ip address fragments.  A match is any ip
+                                   address that starts with the specified
+                                   fragment.  Example: '192.168.2.' will match
+                                   and deny a connection from 192.168.2.45.
+                                   (deny_from)
+
+ -si -secure-ipc                   Use GSI security on ipc channel.
+  Default: TRUE                    (secure_ipc)
+
+ -ia -ipc-auth-mode <string>       Set GSI authorization mode for the ipc
+  Default: host                    connection. Options are: none, host, self or
+                                   subject:[subject].
+                                   (ipc_auth_mode)
+
+ -aa -allow-anonymous              Allow clear text anonymous access. If server
+  Default: FALSE                   is running as root anonymous_user must also
+                                   be set.  Disables ipc security.
+                                   (allow_anonymous)
+
+ -anonymous-names-allowed <string>   Comma separated list of names to treat as
+  Default: not set                 anonymous users when allowing anonymous
+                                   access.  If not set, the default names of
+                                   'anonymous' and 'ftp' will be allowed.  Use
+                                   '*' to allow any username.
+                                   (anonymous_names_allowed)
+
+ -anonymous-user <string>          User to setuid to for an anonymous
+  Default: not set                 connection. Only applies when running as
+                                   root.
+                                   (anonymous_user)
+
+ -anonymous-group <string>         Group to setgid to for an anonymous
+  Default: not set                 connection. If unset, the default group of
+                                   anonymous_user will be used.
+                                   (anonymous_group)
+
+ -sharing-dn <string>              Allow sharing when using the supplied DN.  A
+  Default: not set                 client connected with these credentials will
+                                   be able to access any user for which sharing
+                                   is enabled.
+
+ -sharing-state-dir <string>       Full path to a directory that will contain
+  Default: not set                 files used by GridFTP to control sharing
+                                   access for individual local accounts. The
+                                   special variables '$HOME' and '$USER' can be
+                                   used to create a dynamic path that is unique
+                                   to each local account.  This pathmust be
+                                   writable by the associated account. The
+                                   default path is '$HOME/.globus/sharing/'. 
+                                   This must refer to a path on the filesystem,
+                                   not a path that is only accessible via a DSI
+                                   plugin.
+
+ -sharing-control                  Allow a local user account to control its
+  Default: TRUE                    own sharing access via special GridFTP
+                                   client commands.  The user account must have
+                                   filesystem write access to the sharing state
+                                   dir.
+
+ -sharing-rp <string>              Sharing specific path restrictions.  This
+  Default: not set                 completely replaces the normal path
+                                   restrictions (-rp) when an account is being
+                                   shared by a sharing-dn login.Follows normal
+                                   path restriction semantics.
+
+ -allow-root                       Allow clients to be mapped to the root
+  Default: FALSE                   account.
+                                   (allow_root)
+
+ -password-file <string>           Enable clear text access and authenticate
+  Default: not set                 users against this /etc/passwd formatted
+                                   file.
+                                   (pw_file)
+
+ -connections-max <number>         Maximum concurrent connections allowed. 
+  Default: not set                 Only applies when running in daemon mode. 
+                                   Unlimited if not set.
+                                   (connections_max)
+
+ -connections-disabled             Disable all new connections.  For daemon
+  Default: FALSE                   mode, issue a SIGHUP to the server process
+                                   after changing the config file in order to
+                                   not affect ongoing connections.
+                                   (connections_disabled)
+
+ -offline-msg <string>             Custom message to be displayed to clients
+  Default: not set                 when the server is offline via the
+                                   connections_disabled or connections_max = 0
+                                   options.
+                                   (offline_msg)
+
+ -disable-command-list <string>    A comma separated list of client commands
+  Default: not set                 that will be disabled.
+                                   (disable_command_list)
+
+ -authz-callouts -cas              Enable the GSI authorization callout
+  Default: TRUE                    framework, for callouts such as CAS.
+                                   (cas)
+
+ -use-home-dirs                    Set the starting directory to the
+  Default: TRUE                    authenticated users home dir.  Disabling
+                                   this is the same as setting '-home-dir /'.
+                                   (use_home_dir)
+
+ -home-dir <string>                Set a path to override the system defined
+  Default: not set                 home/starting directory for authenticated
+                                   users.  The special variable strings '$USER'
+                                   and '$HOME' may be used.  The authenticated
+                                   username will be substituted for $USER, and
+                                   the user's real home dir will be substituted
+                                   for $HOME.  Be sure to escape the $
+                                   character if using these on the command
+                                   line.
+
+ -rp -restrict-paths <string>      A comma separated list of full paths that
+  Default: not set                 clients may access.  Each path may be
+                                   prefixed by R and/or W, denoting read or
+                                   write access, otherwise full access is
+                                   granted.  If a given path is a directory,
+                                   all contents and subdirectories will be
+                                   given the same access.  Order of paths does
+                                   not matter -- the permissions on the longest
+                                   matching path will apply.  The special
+                                   character '~' will be replaced by the
+                                   authenticated user's home directory, or the
+                                   -home-dir option, if used. Note that if the
+                                   home directory is not accessible, ~ will be
+                                   set to '/'.  By default all paths are
+                                   allowed, and access control is handled by
+                                   the OS. In a striped or split process
+                                   configuration, this should be set on both
+                                   the frontend and data nodes.
+                                   (restrict_paths)
+
+ -rp-follow-symlinks               Do not verify that a symlink points to an
+  Default: FALSE                   allowed path before following.  By default,
+                                   symlinks are followed only when they point
+                                   to an allowed path.  By enabling this
+                                   option, symlinks will be followed even if
+                                   they point to a path that is otherwise
+                                   restricted.
+                                   (rp_follow_symlinks)
+
+ -em -acl <string>                 A comma separated list of ACL or event
+  Default: not set                 modules to load.
+                                   (acl)
+
+ ==============================  Logging Options  =============================
+
+ -d -log-level <string>            Log level. A comma separated list of levels
+  Default: ERROR                   from: 'ERROR, WARN, INFO, TRANSFER, DUMP,
+                                   ALL'. TRANSFER includes the same statistics
+                                   that are sent to the separate transfer log
+                                   when -log-transfer is used.  Example:
+                                   error,warn,info. You may also specify a
+                                   numeric level of 1-255.  The default level
+                                   is ERROR.
+                                   (log_level)
+
+ -log-module <string>              globus_logging module that will be loaded.
+  Default: not set                 If not set, the default 'stdio' module will
+                                   be used, and the logfile options apply. 
+                                   Built in modules are 'stdio' and 'syslog'. 
+                                   Log module options may be set by specifying
+                                   module:opt1=val1:opt2=val2.  Available
+                                   options for the built in modules are
+                                   'interval' and 'buffer', for buffer flush
+                                   interval and buffer size, respectively. The
+                                   default options are a 64k buffer size and a
+                                   5 second flush interval.  A 0 second flush
+                                   interval will disable periodic flushing, and
+                                   the buffer will only flush when it is full. 
+                                   A value of 0 for buffer will disable
+                                   buffering and all messages will be written
+                                   immediately.  Example: -log-module
+                                   stdio:buffer=4096:interval=10
+                                   (log_module)
+
+ -l -logfile <string>              Path of a single file to log all activity
+  Default: not set                 to.  If neither this option or log_unique is
+                                   set, logs will be written to stderr unless
+                                   the execution mode is detached or inetd, in
+                                   which case logging will be disabled.
+                                   (log_single)
+
+ -L -logdir <string>               Partial path to which 'gridftp.(pid).log'
+  Default: not set                 will be appended to construct the log
+                                   filename. Example: -L /var/log/gridftp/ will
+                                   create a separate log (
+                                   /var/log/gridftp/gridftp.xxxx.log ) for each
+                                   process (which is normally each new client
+                                   session).  If neither this option or
+                                   log_single is set, logs will be written to
+                                   stderr unless the execution mode is detached
+                                   or inetd, in which case logging will be
+                                   disabled.
+                                   (log_unique)
+
+ -Z -log-transfer <string>         Log netlogger style info for each transfer
+  Default: not set                 into this file.  You may also use the
+                                   log-level of TRANSFER to include this info
+                                   in the standard log.
+                                   (log_transfer)
+
+ -log-filemode <string>            File access permissions of log files. Should
+  Default: not set                 be an octal number such as 0644.
+                                   (log_filemode)
+
+ -disable-usage-stats              Disable transmission of per-transfer usage
+  Default: FALSE                   statistics.  See the Usage Statistics
+                                   section in the online documentation for more
+                                   information.
+                                   (disable_usage_stats)
+
+ -usage-stats-target <string>      Comma separated list of contact strings
+  Default: not set                 (host:port) for usage statistics receivers. 
+                                   The usage stats sent to a particular
+                                   receiver may be customized by configuring it
+                                   with a taglist (host:port!taglist)  The
+                                   taglist is a list of characters that each
+                                   correspond to a usage stats tag.  When this
+                                   option is unset, stats are reported to
+                                   usage-stats.globus.org:4810.  If you set
+                                   your own receiver, and wish to continue
+                                   reporting to the Globus receiver, you will
+                                   need to add it manually.  The list of
+                                   available tags follow. Tags marked * are
+                                   reported by default.
+                                   	
+                                   *(e) START - start time of transfer
+                                   *(E) END - end time of transfer
+                                   *(v) VER - version string of gridftp server
+                                   *(b) BUFFER - tcp buffer size used for
+                                   transfer
+                                   *(B) BLOCK - disk blocksize used for
+                                   transfer
+                                   *(N) NBYTES - number of bytes transferred
+                                   *(s) STREAMS - number of parallel streams
+                                   used
+                                   *(S) STRIPES - number of stripes used
+                                   *(t) TYPE - transfer command: RETR, STOR,
+                                   LIST, etc
+                                   *(c) CODE - ftp result code (226 = success,
+                                   5xx = fail)
+                                   *(D) DSI - DSI module in use
+                                   *(A) EM - event modules in use
+                                   *(T) SCHEME - ftp, gsiftp, sshftp, etc.
+                                   (client supplied)
+                                   *(a) APP - guc, rft, generic library app,
+                                   etc. (client supplied)
+                                   *(V) APPVER - version string of above.
+                                   (client supplied)
+                                   (f) FILE - name of file/data transferred
+                                   (i) CLIENTIP - ip address of host running
+                                   client (control channel)
+                                   (I) DATAIP - ip address of source/dest host
+                                   of data (data channel)
+                                   (u) USER - local user name the transfer was
+                                   performed as
+                                   (d) USERDN - DN that was mapped to user id
+                                   (C) CONFID - ID defined by -usage-stats-id
+                                   config option
+                                   (U) SESSID - unique id that can be used to
+                                   match transfers in a session and
+                                   transfers across source/dest of a third
+                                   party transfer. (client supplied)
+                                   (usage_stats_target)
+
+ -usage-stats-id <string>          Identifying tag to include in usage
+  Default: not set                 statistics data.  If this is set and
+                                   usage-stats-target is unset, CONFID will be
+                                   added to the default usage stats data.
+                                   (usage_stats_id)
+
+ ================  Single and Striped Remote Data Node Options  ===============
+
+ -r -remote-nodes <string>         Comma separated list of remote node contact
+  Default: not set                 strings.
+                                   (remote_nodes)
+
+ -hybrid                           When a server is configured for striped
+  Default: FALSE                   operation with the 'remote_nodes' option,
+                                   both a frontend and backend process are
+                                   started even if the client does not request
+                                   multiple stripes.  This option will start
+                                   backend processes only when striped
+                                   operation is requested by the client, while
+                                   servicing non-striped requests with a single
+                                   frontend process.
+
+ -dn -data-node                    This server is a backend data node.
+  Default: FALSE                   (data_node)
+
+ -sbs -stripe-blocksize <number>   Size in bytes of sequential data that each
+  Default: 1048576                 stripe will transfer.
+                                   (stripe_blocksize)
+
+ -stripe-count <number>            Number of number stripes to use per transfer
+  Default: not set                 when this server controls that number.  If
+                                   remote nodes are statically configured (via
+                                   -r or remote_nodes), this will be set to
+                                   that number of nodes, otherwise the default
+                                   is 1.
+                                   (stripe_count)
+
+ -sl -stripe-layout <number>       Stripe layout. 1 = Partitioned, 2 = Blocked.
+  Default: 2                       (stripe_layout)
+
+ -stripe-blocksize-locked          Do not allow client to override stripe
+  Default: FALSE                   blocksize with the OPTS RETR command
+                                   (stripe_blocksize_locked)
+
+ -stripe-layout-locked             Do not allow client to override stripe
+  Default: FALSE                   layout with the OPTS RETR command
+                                   (stripe_locked)
+
+ ================================  Disk Options  ==============================
+
+ -bs -blocksize <number>           Size in bytes of data blocks to read from
+  Default: 262144                  disk before posting to the network.
+                                   (blocksize)
+
+ -sync-writes                      Flush disk writes before sending a restart
+  Default: FALSE                   marker.  This attempts to ensure that the
+                                   range specified in the restart marker has
+                                   actually been committed to disk. This option
+                                   will probably impact performance, and may
+                                   result in different behavior on different
+                                   storage systems. See the manpage for sync()
+                                   for more information.
+                                   (sync_writes)
+
+ -perms <string>                   Set the default permissions for created
+  Default: not set                 files. Should be an octal number such as
+                                   0644.  The default is 0644.  Note: If umask
+                                   is set it will affect this setting -- i.e.
+                                   if the umask is 0002 and this setting is
+                                   0666, the resulting files will be created
+                                   with permissions of 0664.
+                                   (perms)
+
+ -file-timeout <number>            Timeout in seconds for all disk accesses.  A
+  Default: not set                 value of 0 disables the timeout.
+                                   (file_timeout)
+
+
+ ==============================  Network Options  =============================
+
+ -p -port <number>                 Port on which a frontend will listen for
+  Default: not set                 client control channel connections, or on
+                                   which a data node will listen for
+                                   connections from a frontend.  If not set a
+                                   random port will be chosen and printed via
+                                   the logging mechanism.
+                                   (port)
+
+ -control-interface <string>       Hostname or IP address of the interface to
+  Default: not set                 listen for control connections on. If not
+                                   set will listen on all interfaces.
+                                   (control_interface)
+
+ -data-interface <string>          Hostname or IP address of the interface to
+  Default: not set                 use for data connections. If not set will
+                                   use the current control interface.
+                                   (data_interface)
+
+ -ipc-interface <string>           Hostname or IP address of the interface to
+  Default: not set                 use for ipc connections. If not set will
+                                   listen on all interfaces.
+                                   (ipc_interface)
+
+ -hostname <string>                Effectively sets the above
+  Default: not set                 control_interface, data_interface and
+                                   ipc_interface options.
+                                   (hostname)
+
+ -ipc-port <number>                Port on which the frontend will listen for
+  Default: not set                 data node connections.
+                                   (ipc_port)
+
+ -control-preauth-timeout <number>   Time in seconds to allow a client to remain
+  Default: 120                     connected to the control channel without
+                                   activity before authenticating.
+                                   (control_preauth_timeout)
+
+ -control-idle-timeout <number>    Time in seconds to allow a client to remain
+  Default: 600                     connected to the control channel without
+                                   activity.
+                                   (control_idle_timeout)
+
+ -ipc-idle-timeout <number>        Idle time in seconds before an unused ipc
+  Default: 900                     connection will close.
+                                   (ipc_idle_timeout)
+
+ -ipc-connect-timeout <number>     Time in seconds before canceling an
+  Default: 60                      attempted ipc connection.
+                                   (ipc_connect_timeout)
+
+ -allow-udt                        Enable protcol support for UDT with NAT
+  Default: FALSE                   traversal if the udt driver is available. 
+                                   Requires threads.
+
+ -port-range <string>              Port range to use for incoming connections.
+  Default: not set                 The format is "startport,endport". This,
+                                   along with -data-interface, can be used to
+                                   enable operation behind a firewall and/or
+                                   when NAT is involved. This is the same as
+                                   setting the environment variable
+                                   GLOBUS_TCP_PORT_RANGE.
+                                   (port_range)
+
+
+ ===============================  User Messages  ==============================
+
+ -banner <string>                  Message to display to the client before
+  Default: not set                 authentication.
+                                   (banner)
+
+ -banner-file <string>             File to read banner message from.
+  Default: not set                 (banner_file)
+
+ -banner-terse                     When this is set, the minimum allowed banner
+  Default: FALSE                   message will be displayed to unauthenticated
+                                   clients.
+                                   (banner_terse)
+
+ -banner-append                    When this is set, the message set in the
+  Default: FALSE                   'banner' or 'banner_file' option will be
+                                   appended to the default banner message
+                                   rather than replacing it.
+                                   (banner_append)
+
+ -version-tag <string>             Add an identifying string to the existing
+  Default: not set                 toolkit version.  This is displayed in the
+                                   default banner message, the SITE VERSION
+                                   command, and usage stats.
+
+ -login-msg <string>               Message to display to the client after
+  Default: not set                 authentication.
+                                   (login_msg)
+
+ -login-msg-file <string>          File to read login message from.
+  Default: not set                 (login_msg_file)
+
+
+ ===============================  Module Options  =============================
+
+ -dsi <string>                     Data Storage Interface module to load. file
+  Default: not set                 and remote modules are defined by the
+                                   server. If not set, the file module is
+                                   loaded, unless the 'remote' option is
+                                   specified, in which case the remote module
+                                   is loaded.  An additional configuration
+                                   string can be passed to the DSI using the
+                                   format [module name]:[configuration string]
+                                   to this option.  The format of the
+                                   configuration string is defined by the DSI
+                                   being loaded.
+                                   (load_dsi_module)
+
+ -allowed-modules <string>         Comma separated list of ERET/ESTO modules to
+  Default: not set                 allow, and optionally specify an alias for.
+                                   Example: module1,alias2:module2,module3
+                                   (module2 will be loaded when a client asks
+                                   for alias2).
+                                   (allowed_modules)
+
+ -dc-whitelist <string>            A comma separated list of drivers allowed on
+  Default: not set                 the network stack.
+                                   (dc_whitelist)
+
+ -fs-whitelist <string>            A comma separated list of drivers allowed on
+  Default: not set                 the disk stack.
+                                   (fs_whitelist)
+
+ -popen-whitelist <string>         A comma separated list of programs that the
+  Default: not set                 popen driver is allowed to execute, when
+                                   used on the network or disk stack.  An alias
+                                   may also be specified, so that a client does
+                                   not need to specify the full path. Format is
+                                   [alias:]prog,[alias:]prog. example:
+                                   /bin/gzip,tar:/bin/tar
+                                   (popen_whitelist)
+
+ -dc-default <string>              A comma separated list of XIO drivers and
+  Default: not set                 options representing the default network
+                                   stack. Format is of each driver entry is
+                                   driver1[:opt1=val1;opt2=val2;...]. The
+                                   bottom of the stack, the transport driver,
+                                   is always first.
+                                   (dc_default)
+
+ -fs-default <string>              A comma separated list of XIO drivers and
+  Default: not set                 options representing the default disk stack.
+                                   Format is of each driver entry is
+                                   driver1[:opt1=val1;opt2=val2;...]. The
+                                   bottom of the stack, the transport driver,
+                                   is always first.
+                                   (fs_default)
+
+
+ ===================================  Other  ==================================
+
+ -c <string>                       Path to main configuration file that should
+  Default: not set                 be loaded.  Otherwise will attempt to load
+                                   $GLOBUS_LOCATION/etc/gridftp.conf and
+                                   /etc/grid-security/gridftp.conf.
+
+ -C <string>                       Path to directory holding configuration
+  Default: not set                 files that should be loaded. Files will be
+                                   loaded in alphabetical order, and in the
+                                   event of duplcate parameters the last loaded
+                                   file will take precedence.  Note that the
+                                   main configurationfile, if one exists, will
+                                   always be loaded last.
+                                   (config_dir)
+
+ -config-base-path <string>        Base path to use when config and log path
+  Default: not set                 options are not full paths. By default this
+                                   is the current directory when the process is
+                                   started.
+                                   (config_base_path)
+
+ -debug                            Sets options that make server easier to
+  Default: FALSE                   debug.  Forces no-fork, no-chdir, and allows
+                                   core dumps on bad signals instead of exiting
+                                   cleanly. Not recommended for production
+                                   servers.  Note that non-forked servers
+                                   running as 'root' will only accept a single
+                                   connection, and then exit.
+                                   (debug)
+
+ -pidfile <string>                 Write PID of the GridFTP server to this
+  Default: not set                 path. May contain variable references to
+                                   ${localstatedir}
+                                   (pidfile)
+
+
+Any FLAG can be negated by prepending '-no-' or '-n' to the command line option.
+
+Check the GridFTP section at http://www.globus.org/toolkit/docs/
+for more in-depth documentation.
+
