@@ -28,6 +28,15 @@ sum=0
 
 for i in `ls -lk ${SourceDirectory}|grep -v "total" | awk '{print $5}'`
    do
+     sum=`expr ${sum} + ${i}`
+   done
+# calculate average  file size
+
+AverageFileSize=`expr ${sum} / ${NoFiles}`
+sum2=0
+#  calculate dispersion
+for i in `ls -lk ${SourceDirectory}|grep -v "total"|awk '{print $5}'`
+ do
     DIFF=`expr ${i} - ${AverageFileSize}`
     DIFF2=`expr ${DIFF} \* ${DIFF}`
     sum2=`expr ${sum2} + ${DIFF2}`
