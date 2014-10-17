@@ -1,0 +1,271 @@
+#!/bin/bash
+#set -x
+#--------------------------------------------------------------------------
+#
+# Usage: CopyData.gridftp  GridFtpConfig BaseDir SourceDirectory RemoteHost DestinationDirectory [Comments]
+#
+# the script is designed to  test copying  bigdata from local host to remote host
+# using utility globus-url-copy (service GridFtp)
+#
+# Creation date: Sun Sep 01 14:16:21 MSK 2014
+# by Vladimir Titov      email:  tit@astro.spbu.ru
+# Prototype: by Anatoly Oreshkin  email:  anatoly.oreshkin@gmail.com
+#---------------------------------------------------------------------------
+# History of changes:
+#
+#----------------------------------------------------------------------------
+
+# function to calculate  files size dispersion
+
+calc_dispersion () 
+{
+# calculate dispersion
+
+# number of files in ${SourceDirectory} 
+NoFiles=`ls -1 ${SourceDirectory} | wc -l`
+# calculate total size of all files in  ${SourceDirectory}
+sum=0
+
+for i in `ls -lk ${SourceDirectory}|grep -v "total" | awk '{print $5}'`
+   do
+    DIFF=`expr ${i} - ${AverageFileSize}`
+    DIFF2=`expr ${DIFF} \* ${DIFF}`
+    sum2=`expr ${sum2} + ${DIFF2}`
+ done
+FileSizeDispersion=`expr ${sum2} / ${NoFiles}`
+
+}
+#--------------------------------------------------------------
+#
+#  main part of  the script
+#
+#--------------------------------------------------------------
+LOCAL_HOST=`hostname`
+
+#
+#  check  command line parameters
+#
+
+# Parse options for globus-url-copy
+SRC_ARG=0
+while :; do
+  case $1 in
+    -fast|-fsstack|-src-dcstack|-src-fsstack|-dst-dcstack|-dst-fsstack)
+      GLOBUS_COPY="GLOBUS_COPY $1"; shift
+      ;;
+    -f)
+      #GLOBUS_COPY="GLOBUS_COPY $1 $2"
+      OPTFLIST="$2"; shift 2
+      ;;
+    -t|-rst-retries|rst-interval|rst-timeout|stall-timeout)
+      GLOBUS_COPY="GLOBUS_COPY $1 $2"; shift 2
+      ;;
+    -df|-do|-s|-ss|-ds|-tcp-bs|-bs|-p|-list|-sbs)
+      GLOBUS_COPY="GLOBUS_COPY $1 $2"; shift 2
+      ;;
+    -mn|-mp|-smn|-smp|-dmn|-dmp|-aa|-saa|-daa|-src-pipe|-dst-pipe|-pipe)
+      GLOBUS_COPY="GLOBUS_COPY $1 $2"; shift 2
+      ;;
+    -cred|-src-cred|-dst-cred|-data-cred|-af|--sync-level)
+      GLOBUS_COPY="GLOBUS_COPY $1 $2"; shift 2
+      ;;
+    -a|-b|-c|-cd|-r|-q|-v|-vb|-dbg|-rst|-rp|-notpt|-nodcau|-dcsafe)
+      GLOBUS_COPY="GLOBUS_COPY -$1"; shift
+      ;;
+    -dcpriv|-off|-len|-stripe|-ipv6|-udt|-dp|-no-g2|-dp)
+      GLOBUS_COPY="GLOBUS_COPY $1"; shift
+      ;;
+    -?*) printf 'WARN: Unknown option (ignored): %s\n' "$1" >&2; shift
+      ;;
+    *) break
+      ;;
+  esac
+done
+
+if [ "$#" -lt 5 ]; then
+
+    cat <<END
+-------------------------------------------------------------------------------
+the script is designed to  test copying  bigdata from local host to remote host
+                                   using utility globus-url-copy
+
+  Usage: $0   <globus-url-copy options> <gridftp_config_file> \\
+    <BaseDir> <SourceDirectory> <RemoteHost> <DestinationDirectory|/dev/null> \\
+                                                                  [<Comments>]
+
+    globus-url-copy options  -- list of options for globus-url-copy
+    gridftp_config_file  -- gridftp-server configuration file
+                            for tuning gridftp-server, may be empty
+    BaseDir   -- directory where to write transfer proccess logging information
+    SourceDirectory -- directory with files/single file to be transferred
+    RemoteHost -- destination host name
+    DestinationDirectory -- destination directory/single file on RemoteHost
+                                                  or /dev/null
+    Comments -- comments
+-------------------------------------------------------------------------------
+END
+   exit 1
+fi
+LOG_FILE=/tmp/gridftp-Log-`date +"%Y-%m-%d_%H:%M:%S"`
+(
+GridFTPServerConfig=$(readlink -m $1); shift
+
+BASE_DIR=$1; shift
+if [ -z "$OPTFLIST" ]; then
+   SourceDirectory=$1; shift
+   pushd $SourceDirectory >/dev/null; SourceDirectory=$(pwd)
+   popd >/dev/null
+fi
+REMOTE_HOST=$1; shift
+DestinationDirectory=$1; shift
+comments="$@"
+
+
+# directory size
+DirSize=`du -s ${SourceDirectory}  | awk '{print $1}'`
+
+# number of files
+NoFiles=`ls -1 ${SourceDirectory} | wc -l`
+
+# average file size
+AverageFileSize=0
+
+# File size dispersion
+FileSizeDispersion=0
+
+# calculate files size dispersion
+calc_dispersion
+
+# file with  list of files to be transferred
+if [ -z "$OPTFLIST" ]; then
+FileList=/tmp/gridftp$$
+find ${SourceDirectory} -maxdepth 1 -type f \
+ -printf "file:%h/%f sshftp://$REMOTE_HOST$DestinationDirectory/%f\n" > ${FileList}
+else
+FileList="$OPTFLIST"
+fi
+
+# subdirectory to write  logging  information
+SUB_BASE_DIR=${BASE_DIR}/`basename ${0}`.${LOCAL_HOST}.${REMOTE_HOST}.`date +"%Y-%m-%d_%H:%M:%S"`
+
+#SOSREPORT=${SUB_BASE_DIR}/SOSREPORT.${LOCAL_HOST}
+PING=${SUB_BASE_DIR}/PING.${LOCAL_HOST}.${REMOTE_HOST}
+TRACEROUTE=${SUB_BASE_DIR}/TRACEROUTE.${LOCAL_HOST}.${REMOTE_HOST}
+COMMENTS=${SUB_BASE_DIR}/COMMENTS.${LOCAL_HOST}.${REMOTE_HOST}
+ABSTRACT=${SUB_BASE_DIR}/ABSTRACT.${LOCAL_HOST}.${REMOTE_HOST}
+LOG=${SUB_BASE_DIR}/LOG.GridFTP.${LOCAL_HOST}.${REMOTE_HOST}
+
+# Generation of sshftp
+globus-gridftp-server-enable-sshftp -nonroot --force
+sed -i "s,-ssh *$,-c $GridFTPServerConfig -ssh," ~/.globus/sshftp
+
+#
+# Parameters of GridFtp (globus-url-copy):
+#
+
+COMMAND_LINE="globus-url-copy $GLOBUS_COPY -f ${FileList}"
+
+#${REMOTE_HOST}:${DestinationDirectory}"
+
+#
+#  create subdirectory with name ScriptName.LocalHost.RemoteHost.DateTime
+#
+
+echo
+echo "Create subdirectory ${SUB_BASE_DIR} "
+echo
+if [ -d ${SUB_BASE_DIR} ]; then
+    echo "subdirectory ${SUB_BASE_DIR} already exist "
+    echo ""
+else 
+    if ( mkdir ${SUB_BASE_DIR} ); then
+       echo "subdirectory ${SUB_BASE_DIR} created successfully"
+       echo
+    else
+       echo "failed to create subdirectory ${SUB_BASE_DIR}"
+       echo
+       exit 1
+    fi
+fi
+
+#
+# sosreport
+#
+#sosreport > ${SOSREPORT}
+
+echo " Creating sosreport ..."
+sosreport --batch --tmp-dir ${SUB_BASE_DIR} --name ${LOCAL_HOST}.${REMOTE_HOST}  > /dev/null 2>&1
+echo " Creating sosreport completed"
+
+# ping remote host
+echo " ping ${REMOTE_HOST} ..." 
+ping -c 10 ${REMOTE_HOST} > ${PING}
+
+# traceroute remote host
+echo " traceroute ${REMOTE_HOST} ..."
+traceroute ${REMOTE_HOST}  > ${TRACEROUTE}
+
+# comments
+
+echo $comments > ${COMMENTS}
+echo ""
+echo "globus-url-copy tuning parameters:" >> ${COMMENTS}
+cat  ${GridFTPServerConfig} >> ${COMMENTS}
+
+# fill ABSTRACT content
+echo "Start time = `date`" >> ${ABSTRACT}
+echo "Command line = ${COMMAND_LINE}" >> ${ABSTRACT}
+echo "Total data size to transfer(KB) = ${DirSize}" >> ${ABSTRACT}
+echo "Number of files = ${NoFiles}" >> ${ABSTRACT}
+echo "Source directory with files = ${SourceDirectory}" >> ${ABSTRACT}
+echo "Average file size(KB) = ${AverageFileSize}" >> ${ABSTRACT}
+echo "File size dispersion = ${FileSizeDispersion}" >> ${ABSTRACT}
+echo "Local host name = ${LOCAL_HOST}" >> ${ABSTRACT}
+echo "Remote host name = ${REMOTE_HOST}" >> ${ABSTRACT}
+echo "Remote host directory = ${DestinationDirectory}" >> ${ABSTRACT}
+
+#
+#  transferring data to remote host
+#
+
+   cat <<END
+
+ Beginning  data  transfer to ${REMOTE_HOST} ...  
+ Start time =  `date`
+ Command line = ${COMMAND_LINE}
+ Local host name = ${LOCAL_HOST}
+ Source directory with files = ${SourceDirectory} 
+ Total data size to transfer (KB) = ${DirSize}
+ Number of files = ${NoFiles}
+ Average file size (KB) = ${AverageFileSize}
+ File size dispersion = ${FileSizeDispersion}
+ Remote host name = ${REMOTE_HOST}
+ Remote host directory = ${DestinationDirectory}
+
+END
+
+STARTTIME=$(date +"%s")
+
+if ( ${COMMAND_LINE} ); then
+ ENDTIME=$(date +"%s")  
+ ELAPSEDTIME=$((${ENDTIME}-${STARTTIME}))
+ TransferRate=`expr ${DirSize} / ${ELAPSEDTIME}`
+
+ echo "Data size transferred (KB) = ${DirSize}" >> ${ABSTRACT}
+ echo " Data size transferred (KB)= ${DirSize}"
+ echo "End time = `date`">> ${ABSTRACT}
+ echo "Completion = YES" >> ${ABSTRACT}
+ echo "Average transfer speed (KB/sec) = ${TransferRate}" >> ${ABSTRACT}
+ echo " Average transfer speed (KB/sec) = ${TransferRate}" 
+ echo " Elapsed time  (sec) = ${ELAPSEDTIME}" 
+fi
+
+    cat <<END
+ End time =  `date`"
+
+ End of script $0"
+ The Log is available at ${LOG_FILE} "
+END
+
+) 2>& 1 | tee ${LOG_FILE}
+rm -f ${FileList}
