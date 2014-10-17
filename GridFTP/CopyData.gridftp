@@ -258,6 +258,18 @@ if ( ${COMMAND_LINE} ); then
  echo "Average transfer speed (KB/sec) = ${TransferRate}" >> ${ABSTRACT}
  echo " Average transfer speed (KB/sec) = ${TransferRate}" 
  echo " Elapsed time  (sec) = ${ELAPSEDTIME}" 
+#
+ echo " Data transfer completed successfuly"
+else
+ ENDTIME=$(date +"%s")
+ ELAPSEDTIME=$((${ENDTIME}-${STARTTIME}))
+ echo "Data size transferred (KB) = not available" >> ${ABSTRACT}
+ echo " Data size transferred (KB) = not available"
+ echo "End time = `date`" >> ${ABSTRACT}
+ echo "Completion = ABNORMAL" >> ${ABSTRACT}
+ echo " Data transfer completed abnormally"
+ echo " Elapsed time  (sec) = ${ELAPSEDTIME}"
+
 fi
 
     cat <<END
