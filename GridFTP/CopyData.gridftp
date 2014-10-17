@@ -115,6 +115,7 @@ the script is designed to  test copying  bigdata from local host to remote host
 END
    exit 1
 fi
+
 LOG_FILE=/tmp/gridftp-Log-`date +"%Y-%m-%d_%H:%M:%S"`
 (
 GridFTPServerConfig=$(readlink -m $1); shift
@@ -278,7 +279,6 @@ else
  echo "Completion = ABNORMAL" >> ${ABSTRACT}
  echo " Data transfer completed abnormally"
  echo " Elapsed time  (sec) = ${ELAPSEDTIME}"
-
 fi
 
     cat <<END
