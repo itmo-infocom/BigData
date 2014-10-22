@@ -1,0 +1,185 @@
+#!/bin/bash
+#set -x
+#--------------------------------------------------------------------------
+#
+# Usage: Wrapper-CopyData.bbcp   TCPParametersFile BBCPConfig BaseDir SourceDirectory [RemoteUser@]RemoteHost DestinationDirectory [Comments]
+#
+# the script is a wrapper for the script CopyData.bbcp which is designed to  test copying  bigdata from local host to remote host
+# 
+#
+# Creation date: Mon Oct 20 17:18:40 MSK 2014
+# by Anatoly  Oreshkin   email:  anatoly.oreshkin@gmail.com
+#---------------------------------------------------------------------------
+# History of changes:
+# 
+#
+#----------------------------------------------------------------------------
+
+
+#--------------------------------------------------------------
+#
+#  main part of  the script
+#
+#--------------------------------------------------------------
+LOCAL_HOST=`hostname`
+LOCAL_USER=`whoami`
+#
+#  check  command line parameters
+#
+
+
+if [ "$#" -lt 5 ]; then
+
+    cat <<END
+------------------------------------------------------------------------------------------------------------
+     the script is a wrapper for the script CopyData.bbcp
+
+  Usage: $0   <TCPParametersFile> <BBCPConfig> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> [<Comments>]
+               
+               TCPParametersFile  -- a file containing a set of tcp streams numbers and tcp window sizes
+               BBCPConfig -- bbcp configuration file for tuning bbcp, may be empty
+               BaseDir -- directory where to write transfer proccess logging information
+               SourceDirectory -- directory/single file  on local host to be transferred
+               RemoteUser -- destination remote user, if omitted local user selected
+               RemoteHost -- destination remote host name
+               DestinationDirectory -- destination directory on RemoteHost or /dev/null
+               Comments -- comments 
+ ------------------------------------------------------------------------------------------------------------
+END
+   exit 1
+fi
+
+LOG_FILE=/tmp/wrapper-copydata.bbcp-Log-`date +"%Y-%m-%d_%H:%M:%S"`
+(
+TCPParameters=$1
+BBCPConfig=$2
+BASE_DIR=$3
+SourceDirectory=$4
+# REMOTE_USER@REMOTE_HOST   $5
+# check if REMOTE_USER specified
+REMOTE_HOST=`echo $5 | awk -F"@" '{print $2}'`
+if [ -z ${REMOTE_HOST} ]; then
+  REMOTE_HOST=$5
+  REMOTE_USER=${LOCAL_USER}
+else
+  REMOTE_USER=`echo $5 | awk -F"@" '{print $1}'`
+  REMOTE_HOST=`echo $5 | awk -F"@" '{print $2}'`
+fi
+
+DestinationDirectory=$6
+shift; shift; shift; shift; shift;shift  
+Comments="$@"  
+
+
+#
+# declare an array of stream numbers
+#
+declare -a  nstreams=();
+
+#
+# declare an array of TCP Window Sizes
+#
+declare -a  tcpwinsizes=();
+
+TMPPARAM=/tmp/tmparam.$$
+#delete comments from parameters file
+grep -v "#" ${TCPParameters} > ${TMPPARAM}
+
+if [ "`cat ${TMPPARAM}|wc -l`" != 2 ]; then
+  echo "----------------------------------------"
+  echo "Error: parameters file must have 2 lines"
+  echo "----------------------------------------"
+  exit 2
+fi
+
+
+#-----------------------------------------------------------
+#  reading file TCPParametersFile with parameters into arrays
+#-----------------------------------------------------------
+
+# line1 - tcp stream numbers
+# line2 - tcp window sizes
+
+line1=`head -n 1  ${TMPPARAM}`
+line2=`tail -n 1  ${TMPPARAM}`
+
+#OLD_IFS="$IFS"
+#IFS=" "
+nstreams=( ${line1} )
+tcpwinsizes=( ${line2} )
+#IFS="$OLD_IFS"
+
+#echo "tcp streams = ${nstreams[@]}"
+#echo "tcp window sizes = ${tcpwinsizes[@]}" 
+
+# file for sysctl command
+SYSCTLFILE=/tmp/sysctl.$$
+# sysctl command
+SYSCTL="/sbin/sysctl"
+
+# temporary bbcp configuration file
+BBCPConfigTMP=/tmp/bbcpconfig.$$
+
+#-----------------------------------------------------
+# cycle tcp stream numbers * tcp window sizes
+#-----------------------------------------------------
+
+for (( k=0; k<${#nstreams[@]}; k++)); do
+
+  for (( j=0; j<${#tcpwinsizes[@]}; j++)); do
+
+    #
+    # create sysctl file for sysctl command
+    #
+
+     # recommended for hosts with jumbo frames enabled
+      echo "net.ipv4.tcp_mtu_probing = 1" > ${SYSCTLFILE}
+     # recommended default congestion control is htcp
+      echo "net.ipv4.tcp_congestion_control = htcp" >> ${SYSCTLFILE}
+     # increase the length of the processor input queue
+      echo "net.core.netdev_max_backlog = 30000" >> ${SYSCTLFILE}
+     # set tcp window size for reading
+      echo "net.core.rmem_max = ${tcpwinsizes[j]}" >> ${SYSCTLFILE}
+     # set tcp window size for writing
+      echo "net.core.wmem_max = ${tcpwinsizes[j]}" >> ${SYSCTLFILE}
+   #
+      echo "net.ipv4.tcp_rmem = 4096 87380 ${tcpwinsizes[j]}" >> ${SYSCTLFILE}
+   
+     # set kernel parameters
+     ${SYSCTL} -p ${SYSCTLFILE}  
+      
+    #
+    # create temporary bbcp configuration file
+    #
+      # copy content from bbcp config file supplied by invoker to temporary bbcp config file
+      cp -f ${BBCPConfig} ${BBCPConfigTMP}     
+      echo "--windowsz ${tcpwinsizes[j]}" >> ${BBCPConfigTMP}
+      echo "--streams ${nstreams[k]}" >> ${BBCPConfigTMP}
+      echo
+   #
+   # add to comments tcp parameters
+   #
+       Comments2="${Comments} tcp parameters: net.core.rmem_max = ${tcpwinsizes[j]} net.core.wmem_max = ${tcpwinsizes[j]} net.ipv4.tcp_rmem = 4096 87380 ${tcpwinsizes[j]}"
+
+      #
+      # call script CopyData.bbcp
+      #
+      echo
+
+    CopyData.bbcp ${BBCPConfigTMP} ${BASE_DIR} ${SourceDirectory} ${REMOTE_USER}@${REMOTE_HOST} ${DestinationDirectory} ${Comments2}
+
+  done
+done
+
+rm -f ${SYSCTLFILE} ${BBCPConfigTMP} ${TMPPARAM}
+
+   cat <<END
+
+ End of script $0
+ End time =  `date`
+ The Log is available at ${LOG_FILE}
+END
+
+
+) 2>& 1 | tee ${LOG_FILE}
+

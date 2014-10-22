@@ -1,0 +1,85 @@
+Wrapper-CopyData.bbcp
+---------------------
+
+This bash script  is a wrapper for the script CopyData.bbcp which is designed to test transfer of big size data (BigData) from local host 
+to remote host using utility 'bbcp' over Internet.
+This script invokes the script CopyData.bbcp and transfers it input parameters.
+
+The script is run with the following input parameters:
+
+Wrapper-CopyData.bbcp <TCPParametersFile> <BBCPConfig> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> [<Comments>]
+
+where:
+
+    TCPParametersFile -- a file (full path) containing a set of tcp streams numbers and tcp window sizes
+    BBCPConfig -- a file (full path) for bbcp tcp tuning
+    BaseDir -- directory (full path) where the script CopyData.bbcp creates subdirectory to store input and logging information
+    SourceDirectory -- directory or single file (full path) containing files to be transferred to remote host. This directory is created 
+                      using script 'create-test-file-dispersion.sh' (or create-test-file-sigma.sh). 
+                      Files sizes are normally distributed.
+                      Script 'create-test-file-dispersion.sh' can be found on the page
+                              https://github.com/itmo-infocom/BigData/
+    RemoteUser -- remote user on remote host, if omitted, local user selected
+    RemoteHost -- remote host that data to be transferred to
+    DestinationDirectory/dev/null -- directory (full path) on remote host where transferred data to be written. This 
+                                     directory must be created beforehand or it can be just /dev/null
+    Comments -- your comments, optional parameter
+ 
+
+Parameters: <BBCPConfig> <BaseDir>, <SourceDirectory>, <RemoteUser>, <RemoteHost>, <DestinationDirectory/dev/null>, <Comments> are transferred to
+script CopyData.bbcp. 
+
+
+A parameter TCPParametersFile is a file having the following structure:
+--------------------------------------------------------------------------
+
+first line is a set of tcp stream numbers delimited by spaces
+second line is a set of tcp window sizes delimited by spaces
+Comments beginning with hash sign '#' are allowed.
+
+An example of TCPParametersFile:
+
+# this is a file of 2 lines containing the set of tcp streams numbers  and tcp windows sizes (bytes) for measuring of influence
+# of tcp streams number and tcp windows sizes on data transmit speed using script CopyData.bbcp
+#  The comments at the beginning of a line are allowed in this file.
+#
+# first line is a set of tcp streams
+# second line  is a set of tcp windows sizes
+# elements on a line are delimited by spaces
+# 
+1 2 3 4 5 10 14 
+ 131072 262144 524288
+
+If n = the number of tcp streams and  m = the number of tcp windows sizes then
+total number of measurements:  k = n * m
+
+
+On each mesurement with a pair of 'number_of_tcp_streams & tcp_window_size' the script Wrapper-CopyData.bbcp does the 
+following steps:
+
+1.  creates temporary file <SYSCTLFILE> with such content:
+
+net.ipv4.tcp_mtu_probing = 1
+net.ipv4.tcp_congestion_control = htcp
+net.core.netdev_max_backlog = 30000
+net.core.rmem_max = <tcp_window_size>
+net.core.wmem_max = <tcp_window_size>
+net.ipv4.tcp_rmem = 4096 87380 <tcp_window_size>
+
+2. Run command sysctl -p <SYSCTLFILE>
+
+3. Creates temporary config file for bbcp <BBCPConfigTMP> by adding to source config file  <BBCPConfig>  2 lines:
+
+--windowsz <tcp_window_size>
+--streams <number_of_tcp_streams> 
+
+4. Adds to comments the following line:
+
+tcp parameters: net.core.rmem_max = <tcp_window_size> net.core.wmem_max = <tcp_window_size> net.ipv4.tcp_rmem = 4096 87380 <tcp_window_size>
+
+5. calls the script CopyData.bbcp with the parameters:
+
+   CopyData.bbcp <BBCPConfigTMP> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> <Comments>
+
+
+  
