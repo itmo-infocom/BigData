@@ -1,0 +1,29 @@
+#!/bin/sh
+
+echo data flow 1...
+cp streams_splitter_topo.1.1 /tmp/streams_splitter_topo.py
+echo Press ENTER for switching to data flow 2
+read
+echo data flow 2...
+cp streams_splitter_topo.1.2 /tmp/streams_splitter_topo.py
+echo Press ENTER for switching to data flows 1+2
+read
+echo data flow 1+2...
+cp streams_splitter_topo.2.1 /tmp/streams_splitter_topo.py
+echo Press ENTER for switching to data flows 2+1...
+read
+echo data flow 2+1...
+cp streams_splitter_topo.2.2 /tmp/streams_splitter_topo.py
+
+echo Press ENTER for toplogy loop
+read
+echo toplogy loop
+while true
+do
+ for i in 1.1 1.2 2.1 2.2
+ do
+  echo -n $i" "
+  cp streams_splitter_topo.$i /tmp/streams_splitter_topo.py
+  sleep 1
+ done
+done

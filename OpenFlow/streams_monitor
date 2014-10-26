@@ -1,0 +1,24 @@
+#!/bin/sh
+
+if [ $# -lt 1 ]
+then
+        echo "Usage: $0 port [port...]" 
+        exit -1
+fi
+
+PORTS=""
+
+while [ $1 ]
+do
+	PORTS="$PORTS|$1"
+	shift
+done
+
+netstat -n | awk '{if (/^tcp .*:('$PORTS') /) print $4" "$5}'
+
+test -p  /tmp/streams_splitter || mknod  /tmp/streams_splitter p
+
+while true
+do
+	netstat -n | awk '{if (/^tcp .*:('$PORTS') /) print $4" "$5}' > /tmp/streams_splitter
+done

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if [ $# -lt 1 ]
+then
+	echo "Usage: $0 port [port...]" 
+	exit -1
+fi
+
+PORTS=""
+
+while [ $1 ]
+do
+	PORTS="$PORTS|$1"
+	shift
+done
+
+netstat -n | awk '{if (/^tcp .*:('$PORTS') /) print $4" "$5}'

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+for s in 3 4 5 6
+do
+ clear
+ echo s$s:::
+ ovs-ofctl dump-flows s$s
+done
