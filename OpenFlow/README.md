@@ -10,4 +10,4 @@ port_watch -- get streams with selected destination ports
 
 of_status -- flow tables status in 4 Mininet switches
 
-of_del -- clear all 4 Mininet switches flow tables
+of_del -- drop all 4 Mininet switches flow tables
