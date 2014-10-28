@@ -121,9 +121,16 @@ LOG_FILE=/tmp/gridftp-Log-`date +"%Y-%m-%d_%H:%M:%S"`
 GridFTPServerConfig=$(readlink -m $1); shift
 
 BASE_DIR=$1; shift
+SingleFile=''
 if [ -z "$OPTFLIST" ]; then
    SourceDirectory=$1; shift
-   pushd $SourceDirectory >/dev/null; SourceDirectory=$(pwd)
+   if [ -f $SourceDirectory ]; then
+      SingleFile=$(basename $SourceDirectory)
+      pushd $(dirname ${SourceDirectory}) >/dev/null
+   else
+      pushd ${SourceDirectory} >/dev/null
+   fi
+   SourceDirectory=$(pwd)
    popd >/dev/null
 fi
 REMOTE_HOST=$1; shift
@@ -132,10 +139,10 @@ comments="$@"
 
 
 # directory size
-DirSize=`du -s ${SourceDirectory}  | awk '{print $1}'`
+DirSize=`du -s ${SourceDirectory}/${SingleFile}  | awk '{print $1}'`
 
 # number of files
-NoFiles=`ls -1 ${SourceDirectory} | wc -l`
+NoFiles=`ls -1 ${SourceDirectory}/${SingleFile} | wc -l`
 
 # average file size
 AverageFileSize=0
@@ -149,7 +156,7 @@ calc_dispersion
 # file with  list of files to be transferred
 if [ -z "$OPTFLIST" ]; then
 FileList=/tmp/gridftp$$
-find ${SourceDirectory} -maxdepth 1 -type f \
+find ${SourceDirectory}/${SingleFile} -maxdepth 1 -type f \
  -printf "file:%h/%f sshftp://$REMOTE_HOST$DestinationDirectory/%f\n" > ${FileList}
 else
 FileList="$OPTFLIST"
