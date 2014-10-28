@@ -116,14 +116,19 @@ END
    exit 1
 fi
 
+export GridFTPServerConfig=$(readlink -m $1); shift
+export BASE_DIR=$1; shift
+if [ -z "$OPTFLIST" ]; then
+   export SourceDirectory=$1; shift
+fi
+export REMOTE_HOST=$1; shift
+export SUB_BASE_DIR=${BASE_DIR}/`basename ${0}`.${LOCAL_HOST}.${REMOTE_HOST}.`date +"%Y-%m-%d_%H:%M:%S"`
+export LOG=${SUB_BASE_DIR}/LOG.GridFTP.${LOCAL_HOST}.${REMOTE_HOST}
+
 LOG_FILE=/tmp/gridftp-Log-`date +"%Y-%m-%d_%H:%M:%S"`
 (
-GridFTPServerConfig=$(readlink -m $1); shift
-
-BASE_DIR=$1; shift
 SingleFile=''
 if [ -z "$OPTFLIST" ]; then
-   SourceDirectory=$1; shift
    if [ -f $SourceDirectory ]; then
       SingleFile=$(basename $SourceDirectory)
       pushd $(dirname ${SourceDirectory}) >/dev/null
@@ -133,10 +138,9 @@ if [ -z "$OPTFLIST" ]; then
    SourceDirectory=$(pwd)
    popd >/dev/null
 fi
-REMOTE_HOST=$1; shift
+REMOTE_HOSTONLY=${REMOTE_HOST#*@}
 DestinationDirectory=$1; shift
 comments="$@"
-
 
 # directory size
 DirSize=`du -s ${SourceDirectory}/${SingleFile}  | awk '{print $1}'`
@@ -163,18 +167,23 @@ FileList="$OPTFLIST"
 fi
 
 # subdirectory to write  logging  information
-SUB_BASE_DIR=${BASE_DIR}/`basename ${0}`.${LOCAL_HOST}.${REMOTE_HOST}.`date +"%Y-%m-%d_%H:%M:%S"`
-
 #SOSREPORT=${SUB_BASE_DIR}/SOSREPORT.${LOCAL_HOST}
 PING=${SUB_BASE_DIR}/PING.${LOCAL_HOST}.${REMOTE_HOST}
 TRACEROUTE=${SUB_BASE_DIR}/TRACEROUTE.${LOCAL_HOST}.${REMOTE_HOST}
 COMMENTS=${SUB_BASE_DIR}/COMMENTS.${LOCAL_HOST}.${REMOTE_HOST}
 ABSTRACT=${SUB_BASE_DIR}/ABSTRACT.${LOCAL_HOST}.${REMOTE_HOST}
-LOG=${SUB_BASE_DIR}/LOG.GridFTP.${LOCAL_HOST}.${REMOTE_HOST}
 
 # Generation of sshftp
-globus-gridftp-server-enable-sshftp -nonroot --force
-sed -i "s,-ssh *$,-c $GridFTPServerConfig -ssh," ~/.globus/sshftp
+if [ "$(id -u)" == 0 ]; then
+  NONROOT=''
+  SSHFTPLOCATION='/etc/grid-security/'
+else
+  NONROOT='-nonroot'
+  SSHFTPLOCATION='~/.globus/'
+fi
+
+globus-gridftp-server-enable-sshftp ${NONROOT} -force
+sed -i "s,-ssh *$,-c $GridFTPServerConfig -ssh," ${SSHFTPLOCATION}/sshftp
 
 #
 # Parameters of GridFtp (globus-url-copy):
@@ -216,11 +225,11 @@ echo " Creating sosreport completed"
 
 # ping remote host
 echo " ping ${REMOTE_HOST} ..." 
-ping -c 10 ${REMOTE_HOST} > ${PING}
+ping -c 10 ${REMOTE_HOSTONLY} > ${PING}
 
 # traceroute remote host
 echo " traceroute ${REMOTE_HOST} ..."
-traceroute ${REMOTE_HOST}  > ${TRACEROUTE}
+traceroute ${REMOTE_HOSTONLY}  > ${TRACEROUTE}
 
 # comments
 
@@ -295,5 +304,8 @@ fi
  The Log is available at ${LOG_FILE} "
 END
 
+if [ -z "$OPTFLIST" ]; then
+   rm -f ${FileList}
+fi
 ) 2>& 1 | tee ${LOG_FILE}
-rm -f ${FileList}
+mv ${LOG_FILE} ${LOG}
