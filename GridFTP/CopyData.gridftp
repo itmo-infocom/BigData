@@ -176,10 +176,10 @@ ABSTRACT=${SUB_BASE_DIR}/ABSTRACT.${LOCAL_HOST}.${REMOTE_HOST}
 # Generation of sshftp
 if [ "$(id -u)" == 0 ]; then
   NONROOT=''
-  SSHFTPLOCATION='/etc/grid-security/'
+  SSHFTPLOCATION='/etc/grid-security'
 else
   NONROOT='-nonroot'
-  SSHFTPLOCATION='~/.globus/'
+  SSHFTPLOCATION="$HOME/.globus"
 fi
 
 globus-gridftp-server-enable-sshftp ${NONROOT} -force
