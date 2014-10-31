@@ -160,8 +160,13 @@ calc_dispersion
 # file with  list of files to be transferred
 if [ -z "$OPTFLIST" ]; then
 FileList=/tmp/gridftp$$
-find ${SourceDirectory}/${SingleFile} -maxdepth 1 -type f \
+   if [ "$DestinationDirectory" == "/dev/null" ]; then
+      find ${SourceDirectory}/${SingleFile} -maxdepth 1 -type f \
+ -printf "file:%h/%f sshftp://$REMOTE_HOST$DestinationDirectory\n" > ${FileList}
+   else
+      find ${SourceDirectory}/${SingleFile} -maxdepth 1 -type f \
  -printf "file:%h/%f sshftp://$REMOTE_HOST$DestinationDirectory/%f\n" > ${FileList}
+   fi
 else
 FileList="$OPTFLIST"
 fi
