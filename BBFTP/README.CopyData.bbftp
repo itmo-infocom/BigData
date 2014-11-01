@@ -1,0 +1,95 @@
+CopyData.bbftp
+--------------
+
+This bash script  is designed to test transfer of big size data (BigData) from local host to remote host
+using utility 'bbftp' over Internet.
+
+Description of bbftp parameters can be found on the page 
+http://doc.in2p3.fr/bbftp/doc.3.2.1.html
+and also using "man bbftp" "man bbftpd" 
+
+This script is run with the following input parameters:
+
+CopyData.bbftp <bbftp_config_file> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> [<Comments>]
+
+where:
+
+    bbftp_config_file -- bbftp configuration file (full path), it can be empty. It is used for bbftp performance tuning  
+    BaseDir -- directory (full path) where the script creates subdirectory to store input and logging information
+    SourceDirectory -- directory or single file (full path) containing files to be transferred to remote host. This directory is created 
+                      using script 'create-test-directory.sh'. 
+                      Files sizes are normally distributed.
+                      Script 'create-test-directory.sh' can be found on the page
+                              https://github.com/itmo-infocom/BigData/
+    RemoteUser -- remote user on remote host, if omitted, local user selected
+    RemoteHost -- remote host that data to be transferred to
+    DestinationDirectory/dev/null -- directory (full path) on remote host where transferred data to be written. This 
+                                     directory can be also just /dev/null
+    Comments -- your comments, optional parameter
+ 
+
+The script CopyData.bbftp creates under directory <BaseDir> subdirectory with name 
+
+CopyData.bbftp.<LocalHost>.<RemoteHost>.<date>_<time>
+
+in which the following files are created:
+
+ ABSTRACT.<LocalHost>.<RemoteHost>
+ COMMENTS.<LocalHost>.<RemoteHost>
+ LOG.BBFTP.<LocalHost>.<RemoteHost>
+ PING.<LocalHost>.<RemoteHost>
+ TRACEROUTE.<LocalHost>.<RemoteHost>
+ sosreport-<LocalHost>.<RemoteHost>-<date><time>-<hash>.tar.xz
+
+The file ABSTRACT.<LocalHost>.<RemoteHost> has such content:
+
+  Start time = <date time>
+  Command line = <bbftp command line>
+  Total data size to transfer(KB) = <value>
+  Number of files = <value>
+  Source directory with files = <value>
+  Average file size(KB) = <value>
+  File size dispersion = <value>
+  Local host name = <value>
+  Remote host name = <value>
+  Remote host directory = <value>
+  Data size transferred (KB) = <value>
+  End time = <date time>
+  Completion = YES/ABNORMAL
+  Average transfer speed (KB/sec) = <value>
+
+The file COMMENTS.<LocalHost>.<RemoteHost> is filled with <Comments> + content of <bbftp_config_file>   
+The file LOG.BBCP.<LocalHost>.<RemoteHost> is filled with the output (log) of bbftp.
+The file PING.<LocalHost>.<RemoteHost> is filled with the output of 'ping -c 10 <RemoteHost>'
+The file TRACEROUTE.<LocalHost>.<RemoteHost> is filled with the output of 'traceroute <RemoteHost>'
+The file sosreport-<LocalHost>.<RemoteHost>-<date><time>-<hash>.tar.xz is created by command
+sosreport --batch --tmp-dir CopyData.bbftp.<LocalHost>.<RemoteHost>.<date>_<time> --name <LocalHost>.<RemoteHost>
+
+
+THis script invokes bbftp command which remotely starts a bbftpd daemon on remote host through ssh tunnel.
+
+In bbftp configuration file <bbftp_config_file> one can specify so called "behaviour commands" for bbftp performance 
+tuning:
+
+setbuffersize "Buffersize"   -- set the size in Kbytes of the buffer used for reading or writing the files.
+
+setnbstream "NumberOfParallelStreams" -- set the number of parallel streams to NumberOfParallelStreams.  
+
+setrecvwinsize "WindowSize" -- set size in Kbytes of the receive TCP window of each stream of the  bbftpd daemon. This also set 
+the send window size of the client to the same value.
+
+setsendwinsize "WindowSize" --  set size in Kbytes of the send TCP window of each stream of the  bbftpd daemon. This also set 
+the receive window size of the client to the same value.
+
+...
+
+
+Example of bbftp configuration file <bbftp_config_file>
+
+setoption nogzip
+setnbstream 10
+setbuffersize  4096
+setrecvwinsize 4096
+setsendwinsize 4096
+
+
