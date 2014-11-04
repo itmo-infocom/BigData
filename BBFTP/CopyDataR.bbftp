@@ -1,0 +1,341 @@
+#!/bin/bash
+#set -x
+#--------------------------------------------------------------------------
+#
+# Usage: CopyDataR.bbftp  BBFTPConfig BaseDir  [RemoteUser@]RemoteHost  SourceDirectory  DestinationDirectory [Comments]
+#
+# the script is designed to  test copying  bigdata from remote host to local host
+# using utility BBFTP
+#
+# Creation date: Mon Nov  3 11:27:42 MSK 2014
+# by Anatoly  Oreshkin   email:  anatoly.oreshkin@gmail.com
+#---------------------------------------------------------------------------
+# History of changes:
+# 
+#
+#----------------------------------------------------------------------------
+
+
+# function to calculate  files size dispersion
+
+calc_dispersion () 
+{
+# calculate dispersion
+
+# number of files in ${FinalDirectory} 
+NoFiles=`ls -1 ${FinalDirectory} | wc -l`
+# calculate total size of all files in  ${FinalDirectory}
+sum=0
+
+for i in `ls -lk ${FinalDirectory}|grep -v "total" | awk '{print $5}'`
+
+   do
+     sum=`expr ${sum} + ${i}`
+   done
+# calculate average  file size
+
+AverageFileSize=`expr ${sum} / ${NoFiles}`
+sum2=0
+#  calculate dispersion
+for i in `ls -lk ${FinalDirectory}|grep -v "total"|awk '{print $5}'`
+ do
+    DIFF=`expr ${i} - ${AverageFileSize}`
+    DIFF2=`expr ${DIFF} \* ${DIFF}`
+    sum2=`expr ${sum2} + ${DIFF2}`
+ done
+FileSizeDispersion=`expr ${sum2} / ${NoFiles}`
+
+}
+#--------------------------------------------------------------
+#
+#  main part of  the script
+#
+#--------------------------------------------------------------
+LOCAL_HOST=`hostname`
+LOCAL_USER=`whoami`
+#
+#  check  command line parameters
+#
+
+
+if [ "$#" -lt 5 ]; then
+
+    cat <<END
+------------------------------------------------------------------------------------------------------------
+     the script is designed to  test copying  bigdata from remote host to local host using utility BBFTP
+
+  Usage: $0   <bbftp_config_file> <BaseDir>  [<RemoteUser>@]<RemoteHost> <SourceDirectory> <DestinationDirectory> [<Comments>]
+
+               bbftp_config_file  -- bbftp configuration file for tuning bbftp, may be empty
+               BaseDir -- directory where to write transfer proccess logging information
+               RemoteUser -- source remote user, if omitted local user selected
+               RemoteHost -- source remote host name
+               SourceDirectory -- source directory/single file on remote host to be transfered
+               DestinationDirectory -- destination directory on local host
+               Comments -- comments 
+ ------------------------------------------------------------------------------------------------------------
+END
+   exit 1
+fi
+
+LOG_FILE=/tmp/bbftp-Log-`date +"%Y-%m-%d_%H:%M:%S"`
+(
+BBFTPConfig=$1
+BASE_DIR=$2
+# REMOTE_USER@REMOTE_HOST   $3
+# check if REMOTE_USER specified
+REMOTE_HOST=`echo $3 | awk -F"@" '{print $2}'`
+if [ -z ${REMOTE_HOST} ]; then
+  REMOTE_HOST=$3
+  REMOTE_USER=${LOCAL_USER}
+else
+  REMOTE_USER=`echo $3 | awk -F"@" '{print $1}'`
+  REMOTE_HOST=`echo $3 | awk -F"@" '{print $2}'`
+fi
+
+SourceDirectory=$4
+DestinationDirectory=$5
+FinalDirectory=${DestinationDirectory}/`basename ${SourceDirectory}`
+shift; shift; shift; shift; shift;  
+comments="$@"  
+
+# file with  list of files to be transferred from remote host
+FileList=/tmp/bbftp.$$
+FileList2=/tmp/bbftp2.$$
+# file with bbftp control commands like "get RemoteFile LocalFile/dev/null"
+ControlCommands=/tmp/bbftp-control-commands.$$
+
+
+# subdirectory to write  logging  information
+SUB_BASE_DIR=${BASE_DIR}/`basename ${0}`.${REMOTE_HOST}.${LOCAL_HOST}.`date +"%Y-%m-%d_%H:%M:%S"`
+
+#SOSREPORT=${SUB_BASE_DIR}/SOSREPORT.${LOCAL_HOST}
+PING=${SUB_BASE_DIR}/PING.${REMOTE_HOST}.${LOCAL_HOST}
+TRACEROUTE=${SUB_BASE_DIR}/TRACEROUTE.${REMOTE_HOST}.${LOCAL_HOST}
+COMMENTS=${SUB_BASE_DIR}/COMMENTS.${REMOTE_HOST}.${LOCAL_HOST}
+ABSTRACT=${SUB_BASE_DIR}/ABSTRACT.${REMOTE_HOST}.${LOCAL_HOST}
+LOG=${SUB_BASE_DIR}/LOG.BBFTP.${REMOTE_HOST}.${LOCAL_HOST}
+
+#
+# Parameters of BBFTP
+#
+#
+
+#--------------------------------------------------------------
+#  check if ${SourceDirectory} is a directory or regular file
+#-------------------------------------------------------------- 
+#echo "SourceDirectory= ${SourceDirectory}"
+
+
+#if ( bbftp -r 1 -e "dir ${SourceDirectory}" -u ${REMOTE_USER} -s ${REMOTE_HOST} | grep -e "dir.*OK" &>  /dev/null ); then
+if ( bbftp -r 1 -e "dir ${SourceDirectory}" -u ${REMOTE_USER} -s ${REMOTE_HOST} &>  /dev/null ); then
+
+  echo "SourceDirectory is a directory"
+  SourceType="dir"
+
+#
+# create a list of files in directory ${SourceDirectory} on remote host ${REMOTE_HOST}
+#
+
+echo "Create a list of files in directory ${SourceDirectory} from remote host ${REMOTE_HOST}"
+if ( bbftp -m -u ${REMOTE_USER} -e "dir ${SourceDirectory}"  -s ${REMOTE_HOST} > ${FileList2} ); then
+    echo "Succesfull creation of a list of files from remote host ${REMOTE_HOST}"
+else
+  echo "Failed to create a list of files from remote host ${REMOTE_HOST}"
+  exit 2
+fi
+
+
+#
+# select regular files from the list
+#
+cat ${FileList2} | awk -F" " '$1 == "f" {print $2}' > ${FileList}
+
+#
+# creating ControlCommands file from ${FileList}
+# like: 
+# get Remotefile FinalDirectory/dev/null
+#
+#
+
+for i in `cat ${FileList}`
+ do
+   if [ "${DestinationDirectory}" = "/dev/null" ]; then 
+      echo "get ${i}  /dev/null" >> ${ControlCommands}
+   else
+      echo "get ${i}  ${FinalDirectory}/" >> ${ControlCommands}
+   fi
+done
+
+else
+
+# SourceDirectory is a file
+
+  echo "SourceDirectory is a regular file"
+  SourceType="file"
+echo "get ${SourceDirectory}  ${FinalDirectory}" >> ${ControlCommands}
+
+fi
+
+
+
+#
+# to find out a number of tcp streams specified in BBFTPConfig
+#
+
+if ( grep setnbstream ${BBFTPConfig} > /dev/null ); then
+  Nbstreams=`grep setnbstream ${BBFTPConfig}| awk -F" " '{print $2}'` 
+ else
+  Nbstreams=1
+fi
+
+
+COMMAND_LINE="bbftp -m  -R  ${BBFTPConfig}  -f  ${LOG}  -o  ${LOG}\
+    -i ${ControlCommands} -u ${REMOTE_USER} -E 'bbftpd -s -m ${Nbstreams}' ${REMOTE_HOST}"
+
+
+
+#
+#  create subdirectory with name ScriptName.RemoteHost.LocalHost.DateTime
+# 
+
+echo 
+echo "Create subdirectory ${SUB_BASE_DIR} "
+echo
+if [ -d ${SUB_BASE_DIR} ]; then
+    echo "subdirectory ${SUB_BASE_DIR} already exist "
+    echo ""
+else 
+    if ( mkdir ${SUB_BASE_DIR} ); then
+       echo "subdirectory ${SUB_BASE_DIR} created successfully"
+       echo
+    else
+       echo "failed to create subdirectory ${SUB_BASE_DIR}"
+       echo
+       exit 1
+    fi
+fi 
+
+
+
+
+# comments
+
+echo $comments > ${COMMENTS}
+echo "bbftp tuning parameters:" >> ${COMMENTS}
+cat  ${BBFTPConfig} >> ${COMMENTS}
+ 
+# fill in ABSTRACT content 
+echo "Start time = `date`" >> ${ABSTRACT}
+echo "Command line = ${COMMAND_LINE}" >> ${ABSTRACT}
+
+#
+#  transferring data from  remote host to local host
+#
+
+   cat <<END
+
+ Beginning  data  transfer from  remote host ${REMOTE_HOST} to local host ${LOCAL_HOST} ...  
+ Start time =  `date`
+ Command line = ${COMMAND_LINE}
+ Remote host name = ${REMOTE_HOST}
+ Remote source  directory(or single file) with files = ${SourceDirectory}
+ Local host name = ${LOCAL_HOST}
+ Destination  local directory  = ${DestinationDirectory} 
+
+END
+
+STARTTIME=$(date +"%s")
+
+if ( bbftp -m  -R  ${BBFTPConfig}  -f  ${LOG}  -o  ${LOG}  -i ${ControlCommands} -u ${REMOTE_USER} -E 'bbftpd -s -m ${Nbstreams}' ${REMOTE_HOST} ); then
+
+# data transfer success
+ ENDTIME=$(date +"%s")  
+ ELAPSEDTIME=$((${ENDTIME}-${STARTTIME}))
+
+# final(destination)  directory size
+DirSize=`du -s ${FinalDirectory}  | awk '{print $1}'`
+
+# number of files in final(destination) directory
+NoFiles=`ls -1 ${FinalDirectory} | wc -l`
+
+# average file size
+AverageFileSize=0
+
+# File size dispersion
+FileSizeDispersion=0
+
+# calculate files size dispersion
+calc_dispersion
+
+
+
+ TransferRate=`expr ${DirSize} / ${ELAPSEDTIME}`
+
+# fill in ABSTRACT content 
+echo "Total data size to transfer(KB) = ${DirSize}" >> ${ABSTRACT}
+echo "Number of files = ${NoFiles}" >> ${ABSTRACT}
+echo "Remote source directory(or single file) with files = ${SourceDirectory}" >> ${ABSTRACT}
+echo "Average file size(KB) = ${AverageFileSize}" >> ${ABSTRACT}
+echo "File size dispersion = ${FileSizeDispersion}" >> ${ABSTRACT}
+echo "Local host name = ${LOCAL_HOST}" >> ${ABSTRACT}
+echo "Remote host name = ${REMOTE_HOST}" >> ${ABSTRACT}
+echo "Local  destination  directory = ${DestinationDirectory}" >> ${ABSTRACT}
+
+ echo "Data size transferred (KB) = ${DirSize}" >> ${ABSTRACT}
+ echo " Data size transferred (KB)= ${DirSize}"
+ echo "End time = `date`">> ${ABSTRACT}
+ echo "Completion = YES" >> ${ABSTRACT}
+ echo "Average transfer speed (KB/sec) = ${TransferRate}" >> ${ABSTRACT}
+ echo " Average transfer speed (KB/sec) = ${TransferRate}" 
+ echo " Elapsed time  (sec) = ${ELAPSEDTIME}" 
+#
+ echo " Data transfer completed successfuly"
+else
+# data transfer failed
+ ENDTIME=$(date +"%s")
+ ELAPSEDTIME=$((${ENDTIME}-${STARTTIME}))
+# fill in ABSTRACT content 
+echo "Total data size to transfer(KB) = not avaiable" >> ${ABSTRACT}
+echo "Number of files = not avaiable" >> ${ABSTRACT}
+echo "Remote source directory(or single file) with files = ${SourceDirectory}" >> ${ABSTRACT}
+echo "Average file size(KB) = not available" >> ${ABSTRACT}
+echo "File size dispersion = not avaiable" >> ${ABSTRACT}
+echo "Local host name = ${LOCAL_HOST}" >> ${ABSTRACT}
+echo "Remote host name = ${REMOTE_HOST}" >> ${ABSTRACT}
+echo "Local  destination  directory = ${DestinationDirectory}" >> ${ABSTRACT}
+
+ echo "Data size transferred (KB) = not available" >> ${ABSTRACT}
+ echo " Data size transferred (KB) = not available"
+ echo "End time = `date`" >> ${ABSTRACT}
+ echo "Completion = ABNORMAL" >> ${ABSTRACT}
+ echo " Data transfer completed abnormally"
+ echo " Elapsed time  (sec) = ${ELAPSEDTIME}"
+fi
+
+#
+# sosreport
+#
+#sosreport > ${SOSREPORT}
+
+echo " Creating sosreport ..."
+sosreport --batch --tmp-dir ${SUB_BASE_DIR} --name ${REMOTE_HOST}.${LOCAL_HOST}  > /dev/null 2>&1
+echo " Creating sosreport completed"
+
+# ping remote host
+echo " ping ${REMOTE_HOST} ..." 
+ping -c 10 ${REMOTE_HOST} > ${PING}
+
+# traceroute remote host
+echo " traceroute ${REMOTE_HOST} ..."
+traceroute ${REMOTE_HOST}  > ${TRACEROUTE}
+
+    cat <<END
+ End time =  `date`"
+
+ End of script $0"
+ The Log is available at ${LOG_FILE} "
+END
+
+) 2>& 1 | tee ${LOG_FILE}
+rm -f ${FileList}  ${FileList2}

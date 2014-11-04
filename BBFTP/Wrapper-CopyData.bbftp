@@ -167,7 +167,6 @@ for (( k=0; k<${#nstreams[@]}; k++)); do
    # add to comments tcp parameters
    #
        Comments2="${Comments} tcp parameters: net.core.rmem_max = ${tcpwinsizes[j]} net.core.wmem_max = ${tcpwinsizes[j]} net.ipv4.tcp_rmem = 4096 87380 ${tcpwinsizes[j]} net.ipv4.tcp_wmem = 4096 65536 ${tcpwinsizes[j]}"
-
       #
       # call script CopyData.bbftp
       #

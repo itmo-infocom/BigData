@@ -1,0 +1,88 @@
+CopyData.fdt
+-------------
+
+This bash script  is designed to test transfer of big size data (BigData) from local host to remote host
+using utility 'fdt' over Internet.
+Detailed description of fdt parameters can be found on the page 
+
+http://monalisa.cern.ch/FDT/documentation_fdt.html
+
+for information about working with Jar files  and Jar-file manifests
+http://docs.oracle.com/javase/tutorial/deployment/jar/index.html
+
+This script is run with the following input parameters:
+
+CopyData.fdt <fdt_config_file> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> [<Comments>]
+
+where:
+
+    fdt_config_file -- fdt configuration file (full path), it can be empty. It is used for fdt performance tuning  
+    BaseDir -- directory (full path) where the script creates subdirectory to store input and logging information
+    SourceDirectory -- directory or single file (full path) containing files to be transferred to remote host. This directory is created 
+                      using script 'create-test-file-dispersion.sh' (or create-test-file-sigma.sh). 
+                      Files sizes are normally distributed.
+                      Script 'create-test-file-dispersion.sh' can be found on the page
+                              https://github.com/itmo-infocom/BigData/
+    RemoteUser -- remote user on remote host, if omitted, local user selected
+    RemoteHost -- remote host that data to be transferred to
+    DestinationDirectory/dev/null -- directory (full path) on remote host where transferred data to be written. This 
+                                     directory must be created beforehand or it can be just /dev/null
+    Comments -- your comments, optional parameter
+ 
+
+The script CopyData.fdt creates under directory <BaseDir> subdirectory with name 
+
+CopyData.fdt.<LocalHost>.<RemoteHost>.<date>_<time>
+
+in which the following files are created:
+
+ ABSTRACT.<LocalHost>.<RemoteHost>
+ COMMENTS.<LocalHost>.<RemoteHost>
+ LOG.FDT.<LocalHost>.<RemoteHost>
+ PING.<LocalHost>.<RemoteHost>
+ TRACEROUTE.<LocalHost>.<RemoteHost>
+ sosreport-<LocalHost>.<RemoteHost>-<date><time>-<hash>.tar.xz
+
+The file ABSTRACT.<LocalHost>.<RemoteHost> has such content:
+
+  Start time = <date time>
+  Command line = <fdt command line>
+  Total data size to transfer(KB) = <value>
+  Number of files = <value>
+  Source directory with files = <value>
+  Average file size(KB) = <value>
+  File size dispersion = <value>
+  Local host name = <value>
+  Remote host name = <value>
+  Remote host directory = <value>
+  Data size transferred (KB) = <value>
+  End time = <date time>
+  Completion = YES/ABNORMAL
+  Average transfer speed (KB/sec) = <value>
+
+The file COMMENTS.<LocalHost>.<RemoteHost> is filled with <Comments> + content of <fdt_config_file>   
+The file LOG.FDT.<LocalHost>.<RemoteHost> is filled with the output (log) of fdt.
+The file PING.<LocalHost>.<RemoteHost> is filled with the output of 'ping -c 10 <RemoteHost>'
+The file TRACEROUTE.<LocalHost>.<RemoteHost> is filled with the output of 'traceroute <RemoteHost>'
+The file sosreport-<LocalHost>.<RemoteHost>-<date><time>-<hash>.tar.xz is created by command
+sosreport --batch --tmp-dir CopyData.fdt.<LocalHost>.<RemoteHost>.<date>_<time> --name <LocalHost>.<RemoteHost>
+
+THis script invokes "java -jar fdt.jar ..."  command which remotely starts a FDT server on remote host 
+through ssh  "java -jar fdt.jar -p 54321 -noupdates -silent -S -f <source_host>"
+
+FDT uses TCP port 54321 so this port has to be unblocked.
+
+In 'fdt' configuration file <fdt_config_file> one can specify parameters for fdt 
+performance tuning:
+
+-P <noOfStreams>
+-ss <wsz>
+
+Where:
+
+<noOfStreams> - Number of paralel streams to use. Default is 4.
+<wsz> - Set the TCP SO_SND_BUFFER size. M and K may be used as suffixes for Kilo/Mega.
+
+FDT jar file fdt.jar must be placed in directory in which script CopyData.fdt is started on local host.
+
+On remote host where FDT server is started, fdt.jar file must be placed in home directory of remote user. 

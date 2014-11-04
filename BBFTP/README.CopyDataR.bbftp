@@ -1,0 +1,92 @@
+CopyDataR.bbftp
+---------------
+
+This bash script  is designed to test transfer of big size data (BigData) from remote host to local host
+using utility 'bbftp' over Internet.
+Description of bbftp parameters can be found on the page 
+
+http://doc.in2p3.fr/bbftp/doc.3.2.1.html
+and also using "man bbftp" "man bbftpd" 
+
+
+This script is run with the following input parameters:
+
+CopyDataR.bbftp <bbftp_config_file> <BaseDir> [<RemoteUser>@]<RemoteHost> <SourceDirectory>  <DestinationDirectory> [<Comments>]
+
+where:
+
+    bbftp_config_file -- bbftp configuration file (full path), it can be empty. It is used for bbftp performance tuning  
+    BaseDir -- directory (full path) where the script creates subdirectory to store input and logging information
+    RemoteUser -- remote user on remote host, if omitted, local user selected
+    RemoteHost -- remote host that data to be transferred from
+    SourceDirectory -- directory or single file (full path) on remote host containing files to be transferred to local 
+                       host. This directory is created using script 'create-test-directory.sh'
+                       Files sizes are normally distributed.
+                       Script 'create-test-directory.sh' can be found on the page
+                       https://github.com/itmo-infocom/BigData/
+    DestinationDirectory -- directory (full path) on local host where transferred data to be written.
+    Comments -- your comments, optional parameter
+ 
+
+The script CopyData.bbftp creates under directory <BaseDir> subdirectory with name 
+
+CopyDataR.bbftp.<RemoteHost>.<LocalHost>.<date>_<time>
+
+in which the following files are created:
+
+ ABSTRACT.<RemoteHost>.<LocalHost>
+ COMMENTS.<RemoteHost>.<LocalHost>
+ LOG.BBFTP.<RemoteHost>.<LocalHost>
+ PING.<RemoteHost>.<LocalHost>
+ TRACEROUTE.<RemoteHost>.<LocalHost>
+ sosreport-<RemoteHost>.<LocalHost>-<date><time>-<hash>.tar.xz
+
+The file ABSTRACT.<RemoteHost>.<LocalHost> has such content:
+
+  Start time = <date time>
+  Command line = <bbftp command line>
+  Total data size to transfer(KB) = <value>
+  Number of files = <value>
+  Source directory with files = <value>
+  Average file size(KB) = <value>
+  File size dispersion = <value>
+  Local host name = <value>
+  Remote host name = <value>
+  Remote host directory = <value>
+  Data size transferred (KB) = <value>
+  End time = <date time>
+  Completion = YES/ABNORMAL
+  Average transfer speed (KB/sec) = <value>
+
+The file COMMENTS.<RemoteHost>.<LocalHost> is filled with <Comments> + content of <bbftp_config_file>   
+The file LOG.BBFTP.<RemoteHost>.<LocalHost> is filled with the output (log) of bbftp.
+The file PING.<RemoteHost>.<LocalHost> is filled with the output of 'ping -c 10 <RemoteHost>'
+The file TRACEROUTE.<RemoteHost>.<LocalHost> is filled with the output of 'traceroute <RemoteHost>'
+The file sosreport-<RemoteHost>.<LocalHost>-<date><time>-<hash>.tar.xz is created by command
+sosreport --batch --tmp-dir CopyDataR.bbftp.<RemoteHost>.<LocalHost>.<date>_<time> --name <RemoteHost>.<LocalHost>
+
+His script invokes bbftp command which remotely starts a bbftpd daemon on remote host through ssh tunnel (bbftpd -s).
+
+In bbftp configuration file <bbftp_config_file> one can specify so called "behaviour commands" for bbftp performance 
+tuning:
+
+setbuffersize "Buffersize"   -- set the size in Kbytes of the buffer used for reading or writing the files.
+
+setnbstream "NumberOfParallelStreams" -- set the number of parallel streams to NumberOfParallelStreams.  
+
+setrecvwinsize "WindowSize" -- set size in Kbytes of the receive TCP window of each stream of the  bbftpd daemon. This also set 
+the send window size of the client to the same value.
+
+setsendwinsize "WindowSize" --  set size in Kbytes of the send TCP window of each stream of the  bbftpd daemon. This also set 
+the receive window size of the client to the same value.
+
+...
+
+Example of bbftp configuration file <bbftp_config_file>
+
+setoption nogzip
+setnbstream 10
+setbuffersize  4096
+setrecvwinsize 4096
+setsendwinsize 4096
+

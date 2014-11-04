@@ -8,7 +8,7 @@ http://www.slac.stanford.edu/~abh/bbcp/
 
 This script is run with the following input parameters:
 
-CopyDataR.bbcp <bbcp_config_file> <BaseDir> [<RemoteUser>@]<RemoteHost> <SourceDirectory>  <DestinationDirectory/dev/null> [<Comments>]
+CopyDataR.bbcp <bbcp_config_file> <BaseDir> [<RemoteUser>@]<RemoteHost> <SourceDirectory>  <DestinationDirectory> [<Comments>]
 
 where:
 
@@ -22,8 +22,7 @@ where:
                        Files sizes are normally distributed.
                        Script 'create-test-file-dispersion.sh' can be found on the page
                        https://github.com/itmo-infocom/BigData/
-    DestinationDirectory/dev/null -- directory (full path) on local host where transferred data to be written. This 
-                                     directory must be created beforehand or it can be just /dev/null
+    DestinationDirectory -- directory (full path) on local host where transferred data to be written. 
     Comments -- your comments, optional parameter
  
 

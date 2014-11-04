@@ -2,18 +2,15 @@
 #set -x
 #--------------------------------------------------------------------------
 #
-# Usage: Wrapper-CopyData.bbcp   TCPParametersFile BBCPConfig BaseDir SourceDirectory [RemoteUser@]RemoteHost DestinationDirectory [Comments]
+# Usage: Wrapper-CopyData.fdt   TCPParametersFile FDTConfig BaseDir SourceDirectory [RemoteUser@]RemoteHost DestinationDirectory [Comments]
 #
-# the script is a wrapper for the script CopyData.bbcp which is designed to  test copying  bigdata from local host to remote host
+# the script is a wrapper for the script CopyData.fdt which is designed to  test copying  bigdata from local host to remote host
 # 
 #
-# Creation date: Mon Oct 20 17:18:40 MSK 2014
+# Creation date: Tue Nov  4 17:46:28 MSK 2014
 # by Anatoly  Oreshkin   email:  anatoly.oreshkin@gmail.com
 #---------------------------------------------------------------------------
 # History of changes:
-# by A. Oreshkin Sun Nov  2 19:18:06 MSK 2014
-# added 1 line "net.ipv4.tcp_wmem = 4096 65536 ${tcpwinsizes[j]}"
-# to   ${SYSCTLFILE} 
 #
 #----------------------------------------------------------------------------
 
@@ -34,12 +31,12 @@ if [ "$#" -lt 5 ]; then
 
     cat <<END
 ------------------------------------------------------------------------------------------------------------
-     the script is a wrapper for the script CopyData.bbcp
+     the script is a wrapper for the script CopyData.fdt
 
-  Usage: $0   <TCPParametersFile> <BBCPConfig> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> [<Comments>]
+  Usage: $0   <TCPParametersFile> <FDTConfig> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> [<Comments>]
                
                TCPParametersFile  -- a file containing a set of tcp streams numbers and tcp window sizes
-               BBCPConfig -- bbcp configuration file for tuning bbcp, may be empty
+               FDTConfig -- fdt configuration file for tuning fdt, may be empty
                BaseDir -- directory where to write transfer proccess logging information
                SourceDirectory -- directory/single file  on local host to be transferred
                RemoteUser -- destination remote user, if omitted local user selected
@@ -51,10 +48,10 @@ END
    exit 1
 fi
 
-LOG_FILE=/tmp/wrapper-copydata.bbcp-Log-`date +"%Y-%m-%d_%H:%M:%S"`
+LOG_FILE=/tmp/wrapper-copydata.fdt-Log-`date +"%Y-%m-%d_%H:%M:%S"`
 (
 TCPParameters=$1
-BBCPConfig=$2
+FDTConfig=$2
 BASE_DIR=$3
 SourceDirectory=$4
 # REMOTE_USER@REMOTE_HOST   $5
@@ -120,7 +117,7 @@ SYSCTLFILE=/tmp/sysctl.$$
 SYSCTL="/sbin/sysctl"
 
 # temporary bbcp configuration file
-BBCPConfigTMP=/tmp/bbcpconfig.$$
+FDTConfigTMP=/tmp/fdtconfig.$$
 
 #-----------------------------------------------------
 # cycle tcp stream numbers * tcp window sizes
@@ -154,10 +151,10 @@ for (( k=0; k<${#nstreams[@]}; k++)); do
     #
     # create temporary bbcp configuration file
     #
-      # copy content from bbcp config file supplied by invoker to temporary bbcp config file
-      cp -f ${BBCPConfig} ${BBCPConfigTMP}     
-      echo "--windowsz ${tcpwinsizes[j]}" >> ${BBCPConfigTMP}
-      echo "--streams ${nstreams[k]}" >> ${BBCPConfigTMP}
+      # copy content from fdt config file supplied by invoker to temporary fdt config file
+      cp -f ${FDTConfig} ${FDTConfigTMP}     
+      echo "-ss ${tcpwinsizes[j]}" >> ${FDTConfigTMP}
+      echo "-P ${nstreams[k]}" >> ${FDTConfigTMP}
       echo
    #
    # add to comments tcp parameters
@@ -169,12 +166,12 @@ for (( k=0; k<${#nstreams[@]}; k++)); do
       #
       echo
 
-    CopyData.bbcp ${BBCPConfigTMP} ${BASE_DIR} ${SourceDirectory} ${REMOTE_USER}@${REMOTE_HOST} ${DestinationDirectory} ${Comments2}
+    CopyData.fdt ${FDTConfigTMP} ${BASE_DIR} ${SourceDirectory} ${REMOTE_USER}@${REMOTE_HOST} ${DestinationDirectory} ${Comments2}
 
   done
 done
 
-rm -f ${SYSCTLFILE} ${BBCPConfigTMP} ${TMPPARAM}
+rm -f ${SYSCTLFILE} ${FDTConfigTMP} ${TMPPARAM}
 
    cat <<END
 
