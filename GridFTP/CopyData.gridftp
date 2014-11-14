@@ -12,6 +12,8 @@
 # Prototype: by Anatoly Oreshkin  email:  anatoly.oreshkin@gmail.com
 #---------------------------------------------------------------------------
 # History of changes:
+# change by A. Oreshkin 14.11.2014 email:  anatoly.oreshkin@gmail.com
+# correction GLOBUS_COPY --> ${GLOBUS_COPY}
 #
 #----------------------------------------------------------------------------
 
@@ -60,29 +62,29 @@ SRC_ARG=0
 while :; do
   case $1 in
     -fast|-fsstack|-src-dcstack|-src-fsstack|-dst-dcstack|-dst-fsstack)
-      GLOBUS_COPY="GLOBUS_COPY $1"; shift
+      GLOBUS_COPY="${GLOBUS_COPY} $1"; shift
       ;;
     -f)
-      #GLOBUS_COPY="GLOBUS_COPY $1 $2"
+      #GLOBUS_COPY="${GLOBUS_COPY} $1 $2"
       OPTFLIST="$2"; shift 2
       ;;
     -t|-rst-retries|rst-interval|rst-timeout|stall-timeout)
-      GLOBUS_COPY="GLOBUS_COPY $1 $2"; shift 2
+      GLOBUS_COPY="${GLOBUS_COPY} $1 $2"; shift 2
       ;;
     -df|-do|-s|-ss|-ds|-tcp-bs|-bs|-p|-list|-sbs)
-      GLOBUS_COPY="GLOBUS_COPY $1 $2"; shift 2
+      GLOBUS_COPY="${GLOBUS_COPY} $1 $2"; shift 2
       ;;
     -mn|-mp|-smn|-smp|-dmn|-dmp|-aa|-saa|-daa|-src-pipe|-dst-pipe|-pipe)
-      GLOBUS_COPY="GLOBUS_COPY $1 $2"; shift 2
+      GLOBUS_COPY="${GLOBUS_COPY} $1 $2"; shift 2
       ;;
     -cred|-src-cred|-dst-cred|-data-cred|-af|--sync-level)
-      GLOBUS_COPY="GLOBUS_COPY $1 $2"; shift 2
+      GLOBUS_COPY="${GLOBUS_COPY} $1 $2"; shift 2
       ;;
     -a|-b|-c|-cd|-r|-q|-v|-vb|-dbg|-rst|-rp|-notpt|-nodcau|-dcsafe)
-      GLOBUS_COPY="GLOBUS_COPY -$1"; shift
+      GLOBUS_COPY="${GLOBUS_COPY} -$1"; shift
       ;;
     -dcpriv|-off|-len|-stripe|-ipv6|-udt|-dp|-no-g2|-dp)
-      GLOBUS_COPY="GLOBUS_COPY $1"; shift
+      GLOBUS_COPY="${GLOBUS_COPY} $1"; shift
       ;;
     -?*) printf 'WARN: Unknown option (ignored): %s\n' "$1" >&2; shift
       ;;
@@ -194,7 +196,7 @@ sed -i "s,-ssh *$,-c $GridFTPServerConfig -ssh," ${SSHFTPLOCATION}/sshftp
 # Parameters of GridFtp (globus-url-copy):
 #
 
-COMMAND_LINE="globus-url-copy $GLOBUS_COPY -f ${FileList}"
+COMMAND_LINE="globus-url-copy ${GLOBUS_COPY} -f ${FileList}"
 
 #${REMOTE_HOST}:${DestinationDirectory}"
 
