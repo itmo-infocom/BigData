@@ -11,6 +11,8 @@
 # by Anatoly  Oreshkin   email:  anatoly.oreshkin@gmail.com
 #---------------------------------------------------------------------------
 # History of changes:
+# changed by A. Oreshkin Tue Nov 18 18:08:13 MSK 2014
+# added -D[min:max] Domain for ephemeral ports option to BBFTPConfig
 # 
 #
 #----------------------------------------------------------------------------
@@ -162,8 +164,15 @@ if ( grep setnbstream ${BBFTPConfig} > /dev/null ); then
   Nbstreams=1
 fi
 
+#
+# extract  -D option if specified
+# 
+
+BBFTPPARAM=`grep "\-D" ${BBFTPConfig}` 
+
+
  
-COMMAND_LINE="bbftp -m  -R  ${BBFTPConfig}  -f  ${LOG}  -o  ${LOG}\
+COMMAND_LINE="bbftp -m  ${BBFTPPARAM} -R  ${BBFTPConfig}  -f  ${LOG}  -o  ${LOG}\
     -i ${ControlCommands} -u ${REMOTE_USER} -E 'bbftpd -s -m ${Nbstreams}' ${REMOTE_HOST}"
 
              
@@ -234,7 +243,7 @@ END
 STARTTIME=$(date +"%s")
 
 
-if ( bbftp -m  -R  ${BBFTPConfig}  -f  ${LOG}  -o  ${LOG}  -i ${ControlCommands} -u ${REMOTE_USER} -E 'bbftpd -s -m ${Nbstreams}' ${REMOTE_HOST} ); then
+if ( bbftp -m ${BBFTPPARAM} -R  ${BBFTPConfig}  -f  ${LOG}  -o  ${LOG}  -i ${ControlCommands} -u ${REMOTE_USER} -E 'bbftpd -s -m ${Nbstreams}' ${REMOTE_HOST} ); then
 
 # data transfer success
  ENDTIME=$(date +"%s")  

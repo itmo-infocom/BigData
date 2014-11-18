@@ -82,7 +82,7 @@ setsendwinsize "WindowSize" --  set size in Kbytes of the send TCP window of eac
 the receive window size of the client to the same value.
 
 ...
-
+You can also put in <bbftp_config_file> bbftp command line parameter: -D[min:max]
 
 Example of bbftp configuration file <bbftp_config_file>
 
@@ -91,5 +91,5 @@ setnbstream 10
 setbuffersize  4096
 setrecvwinsize 4096
 setsendwinsize 4096
-
+-D5022:5040
 
