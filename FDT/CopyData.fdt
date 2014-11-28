@@ -11,10 +11,12 @@
 # by Anatoly  Oreshkin   email:  anatoly.oreshkin@gmail.com
 #---------------------------------------------------------------------------
 # History of changes:
-# Fri Nov  7 16:58:56 MSK 2014 by A Oreshkin
+# Fri Nov  7 16:58:56 MSK 2014 by A. Oreshkin
 # added fdt parameter -sshKey $HOME/.ssh/id_rsa to eliminate a neccessity 
 # to enter password
-#
+#-------
+# Fri Nov 28 18:46:33 MSK 2014 by A. Oreshkin
+# change "| tee ${LOG}" for "> ${LOG}"
 #----------------------------------------------------------------------------
 
 
@@ -211,10 +213,10 @@ END
 
 STARTTIME=$(date +"%s")
 
-#if ( ${COMMAND_LINE} 2>&1 | tee ${LOG} ); then
+#if ( ${COMMAND_LINE} > ${LOG} 2>&1 ); then
 
 if ( echo | java -jar fdt.jar ${PARAM} -sshKey $HOME/.ssh/id_rsa -r \
-${SourceDirectory} ${REMOTE_USER}@${REMOTE_HOST}:${DestinationDirectory}  2>&1 | tee ${LOG} ); then
+${SourceDirectory} ${REMOTE_USER}@${REMOTE_HOST}:${DestinationDirectory} > ${LOG}  2>&1 ); then
 
 # data transfer success
  ENDTIME=$(date +"%s")  
