@@ -1,0 +1,6 @@
+DATE='2014-11-29'
+TITLE='Data Transfer Speed. Data Size 25 GB. Different Number of Streams and TCP Window Size \nFDT from ITMO to JINR.'
+TEST=25GB.fdt.itmo2jinr.tcp
+X='0:14'
+Y='0:160000'
+export DATE TITLE TEST
