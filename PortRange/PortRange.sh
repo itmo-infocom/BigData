@@ -30,9 +30,14 @@ PORTRANGE=$1
 IFS=""
 OPENPORTS=`lsof -i TCP:$PORTRANGE || \
                        (echo "No open sockets in range $PORTRANGE"; exit)`
-#echo $OPENPORTS
-#IFS=""
-echo "CMND PID PROT    SRC->DEST"
+
 RESULT=$(echo $OPENPORTS|tail -n +2 |gawk '{ print $1, $2, $8, $9, $10 }')
 
-echo $RESULT
+if test -z "$UTILITY"
+  then
+     test ! -z  $RESULT && (echo "CMND PID PROT    SRC->DEST"; echo $RESULT)
+  else
+     RESUTIL=`echo "$RESULT" | grep -e "^$UTILITY\ "`
+     test ! -z  $RESUTIL && (echo "CMND PID PROT    SRC->DEST"; echo $RESUTIL)
+fi
+
