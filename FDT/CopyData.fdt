@@ -14,11 +14,16 @@
 # Fri Nov  7 16:58:56 MSK 2014 by A. Oreshkin
 # added fdt parameter -sshKey $HOME/.ssh/id_rsa to eliminate a neccessity 
 # to enter password
-#-------
+#
 # Fri Nov 28 18:46:33 MSK 2014 by A. Oreshkin
 # change "| tee ${LOG}" for "> ${LOG}"
+#
+# Fri Dec  5 16:48:25 MSK 2014 by Anatoly  Oreshkin  
+# export LANG=C added in order to prevent directory(file) name to be in russian encoding  
+# call 'RunTop.sh' added, to get cpu load & memory usage
 #----------------------------------------------------------------------------
 
+export LANG=C
 
 # function to calculate  files size dispersion
 
@@ -118,10 +123,6 @@ FileSizeDispersion=0
 # calculate files size dispersion
 calc_dispersion
 
-# file with  list of files to be transferred
-#FileList=/tmp/fdt$$
-
-#find ${SourceDirectory} -type f -print > ${FileList}
 
 # subdirectory to write  logging  information
 SUB_BASE_DIR=${BASE_DIR}/`basename ${0}`.${LOCAL_HOST}.${REMOTE_HOST}.`date +"%Y-%m-%d_%H:%M:%S"`
@@ -132,6 +133,9 @@ TRACEROUTE=${SUB_BASE_DIR}/TRACEROUTE.${LOCAL_HOST}.${REMOTE_HOST}
 COMMENTS=${SUB_BASE_DIR}/COMMENTS.${LOCAL_HOST}.${REMOTE_HOST}
 ABSTRACT=${SUB_BASE_DIR}/ABSTRACT.${LOCAL_HOST}.${REMOTE_HOST}
 LOG=${SUB_BASE_DIR}/LOG.FDT.${LOCAL_HOST}.${REMOTE_HOST}
+LOGTOP=${SUB_BASE_DIR}/TOP.${LOCAL_HOST}.${REMOTE_HOST}
+INTERVAL=5m # interval  to run 'top' command
+SYSCTL=/sbin/sysctl
 
 #
 # Parameters of fdt
@@ -172,14 +176,32 @@ fi
 
 
 
-
+#
 # comments
+#
 
 echo $comments > ${COMMENTS}
-echo "fdt tuning parameters:" >> ${COMMENTS}
+# Kernel TCP/IP parameters
+
+cat <<END
+Current kernel TCP/IP parameters:
+
+------------------------------------------------------
+`${SYSCTL} -a | egrep "\.rmem|\.wmem|tcp_rmem|tcp_wmem"`
+------------------------------------------------------
+
+Please make sure the same parameters to be configured on remote host '${REMOTE_HOST}'
+END
+
+echo "Current kernel tcp/ip  parameters:" >> ${COMMENTS}
+${SYSCTL} -a | egrep "\.rmem|\.wmem|tcp_rmem|tcp_wmem" >> ${COMMENTS}
+echo >> ${COMMENTS}
+echo "FDT tuning parameters:" >> ${COMMENTS}
 cat  ${fdtConfig} >> ${COMMENTS}
  
+#
 # fill in ABSTRACT content 
+#
 echo "Start time = `date`" >> ${ABSTRACT}
 echo "Command line = ${COMMAND_LINE}" >> ${ABSTRACT}
 echo "Total data size to transfer(KB) = ${DirSize}" >> ${ABSTRACT}
@@ -190,6 +212,19 @@ echo "File size dispersion = ${FileSizeDispersion}" >> ${ABSTRACT}
 echo "Local host name = ${LOCAL_HOST}" >> ${ABSTRACT}
 echo "Remote host name = ${REMOTE_HOST}" >> ${ABSTRACT}
 echo "Remote host directory = ${DestinationDirectory}" >> ${ABSTRACT}
+
+#----------------------------------------
+# start RunTop.sh
+#----------------------------------------
+
+echo
+echo "Starting RunTop.sh in background ..."
+echo 
+
+RunTop.sh ${LOGTOP} ${INTERVAL} &
+# PID of RunTop.sh process
+TOPPID=$!
+
 
 #
 #  transferring data to remote host
@@ -212,6 +247,11 @@ echo "Remote host directory = ${DestinationDirectory}" >> ${ABSTRACT}
 END
 
 STARTTIME=$(date +"%s")
+
+#-----------------------------------------------
+#           start FDT
+#-----------------------------------------------
+
 
 #if ( ${COMMAND_LINE} > ${LOG} 2>&1 ); then
 
@@ -268,5 +308,8 @@ traceroute ${REMOTE_HOST}  > ${TRACEROUTE}
  The Log is available at ${LOG_FILE}
 END
 
+CHILDPID=`pgrep -P ${TOPPID}`
+kill -9  ${CHILDPID} ${TOPPID}
+
+
 ) 2>& 1 | tee ${LOG_FILE}
-#rm -f ${FileList}

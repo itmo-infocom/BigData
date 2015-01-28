@@ -19,16 +19,22 @@ where:
     fdt_config_file -- fdt configuration file (full path), it can be empty. It is used for fdt performance tuning  
     BaseDir -- directory (full path) where the script creates subdirectory to store input and logging information
     SourceDirectory -- directory or single file (full path) containing files to be transferred to remote host. This directory is created 
-                      using script 'create-test-file-dispersion.sh' (or create-test-file-sigma.sh). 
+                      using script 'create-test-directory.sh'.
                       Files sizes are normally distributed.
-                      Script 'create-test-file-dispersion.sh' can be found on the page
-                              https://github.com/itmo-infocom/BigData/
+                      Script 'create-test-directory.sh' can be found on the page https://github.com/itmo-infocom/BigData/test-data
     RemoteUser -- remote user on remote host, if omitted, local user selected
     RemoteHost -- remote host that data to be transferred to
     DestinationDirectory/dev/null -- directory (full path) on remote host where transferred data to be written. This 
                                      directory must be created beforehand or it can be just /dev/null
     Comments -- your comments, optional parameter
  
+This script invokes the script 'RunTop.sh' which runs command 'top -ibn 1' with specified interval.
+The data privided by 'RunTop.sh' may be used to evaluate CPU & Memory consumption.
+
+Kernel tcp/ip parameters should be set up beforehand under user 'root' to reach maximum throughput 
+depending of the communication line bandwidth.
+
+The script 'RunTop.sh' can be found on the page https://github.com/itmo-infocom/BigData/test-data
 
 The script CopyData.fdt creates under directory <BaseDir> subdirectory with name 
 
@@ -41,6 +47,7 @@ in which the following files are created:
  LOG.FDT.<LocalHost>.<RemoteHost>
  PING.<LocalHost>.<RemoteHost>
  TRACEROUTE.<LocalHost>.<RemoteHost>
+ TOP.<LocalHost>.<RemoteHost>
  sosreport-<LocalHost>.<RemoteHost>-<date><time>-<hash>.tar.xz
 
 The file ABSTRACT.<LocalHost>.<RemoteHost> has such content:
@@ -64,6 +71,7 @@ The file COMMENTS.<LocalHost>.<RemoteHost> is filled with <Comments> + content o
 The file LOG.FDT.<LocalHost>.<RemoteHost> is filled with the output (log) of fdt.
 The file PING.<LocalHost>.<RemoteHost> is filled with the output of 'ping -c 10 <RemoteHost>'
 The file TRACEROUTE.<LocalHost>.<RemoteHost> is filled with the output of 'traceroute <RemoteHost>'
+The file TOP.<LocalHost>.<RemoteHost> is filled with the output of 'RunTop.sh'
 The file sosreport-<LocalHost>.<RemoteHost>-<date><time>-<hash>.tar.xz is created by command
 sosreport --batch --tmp-dir CopyData.fdt.<LocalHost>.<RemoteHost>.<date>_<time> --name <LocalHost>.<RemoteHost>
 
@@ -83,6 +91,6 @@ Where:
 <noOfStreams> - Number of paralel streams to use. Default is 4.
 <wsz> - Set the TCP SO_SND_BUFFER size. M and K may be used as suffixes for Kilo/Mega.
 
-FDT jar file fdt.jar must be placed in directory in which script CopyData.fdt is started on local host.
+FDT jar file 'fdt.jar' must be placed in directory in which script CopyData.fdt is started on local host.
 
-On remote host where FDT server is started, fdt.jar file must be placed in home directory of remote user. 
+On remote host where FDT server is started, 'fdt.jar' file must be placed in home directory of remote user. 
