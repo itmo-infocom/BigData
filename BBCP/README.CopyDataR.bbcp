@@ -5,6 +5,9 @@ This bash script  is designed to test transfer of big size data (BigData) from r
 using utility 'bbcp' over Internet.
 Detailed description of bbcp parameters can be found on the page 
 http://www.slac.stanford.edu/~abh/bbcp/
+An example of using bbcp on the page:
+http://pcbunn.cithep.caltech.edu/bbcp/using_bbcp.htm
+
 
 This script is run with the following input parameters:
 
@@ -17,14 +20,24 @@ where:
     RemoteUser -- remote user on remote host, if omitted, local user selected
     RemoteHost -- remote host that data to be transferred from
     SourceDirectory -- directory or single file (full path) on remote host containing files to be transferred to local 
-                       host. This directory is created using script 'create-test-file-dispersion.sh' (or 
-                       create-test-file-sigma.sh). 
+                       host. This directory is created using script 'create-test-directory.sh'
                        Files sizes are normally distributed.
-                       Script 'create-test-file-dispersion.sh' can be found on the page
-                       https://github.com/itmo-infocom/BigData/
+                       Script 'create-test-directory.sh' can be found on the page
+                       https://github.com/itmo-infocom/BigData/test-data
     DestinationDirectory -- directory (full path) on local host where transferred data to be written. 
     Comments -- your comments, optional parameter
  
+This script invokes the script 'RunTop.sh' which runs command 'top -ibn 1' with specified interval.
+The data privided by 'RunTop.sh' may be used to evaluate CPU & Memory consumption.
+Kernel tcp/ip parameters should be set up beforehand under user 'root' to reach maximum throughput 
+depending of the communication line bandwidth.
+
+In  <bbcp_config_file> one can specify tcp window size, number of streams and other bbcp parameters like this:
+--force
+--windowsz 262144
+--streams 2
+
+The script 'RunTop.sh' can be found on the page https://github.com/itmo-infocom/BigData/test-data
 
 The script CopyData.bbcp creates under directory <BaseDir> subdirectory with name 
 
@@ -37,6 +50,7 @@ in which the following files are created:
  LOG.BBCP.<RemoteHost>.<LocalHost>
  PING.<RemoteHost>.<LocalHost>
  TRACEROUTE.<RemoteHost>.<LocalHost>
+ TOP.<LocalHost>.<RemoteHost>
  sosreport-<RemoteHost>.<LocalHost>-<date><time>-<hash>.tar.xz
 
 The file ABSTRACT.<RemoteHost>.<LocalHost> has such content:
@@ -56,10 +70,11 @@ The file ABSTRACT.<RemoteHost>.<LocalHost> has such content:
   Completion = YES/ABNORMAL
   Average transfer speed (KB/sec) = <value>
 
-The file COMMENTS.<RemoteHost>.<LocalHost> is filled with <Comments> + content of <bbcp_config_file>   
+The file COMMENTS.<RemoteHost>.<LocalHost> is filled with <Comments> + content of <bbcp_config_file> +
+current kernel tcp/ip parameters
 The file LOG.BBCP.<RemoteHost>.<LocalHost> is filled with the output (log) of bbcp.
 The file PING.<RemoteHost>.<LocalHost> is filled with the output of 'ping -c 10 <RemoteHost>'
 The file TRACEROUTE.<RemoteHost>.<LocalHost> is filled with the output of 'traceroute <RemoteHost>'
+The file TOP.<LocalHost>.<RemoteHost> is filled with the output of 'RunTop.sh'
 The file sosreport-<RemoteHost>.<LocalHost>-<date><time>-<hash>.tar.xz is created by command
 sosreport --batch --tmp-dir CopyDataR.bbcp.<RemoteHost>.<LocalHost>.<date>_<time> --name <RemoteHost>.<LocalHost>
-

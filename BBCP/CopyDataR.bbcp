@@ -11,10 +11,13 @@
 # by Anatoly  Oreshkin   email:  anatoly.oreshkin@gmail.com
 #---------------------------------------------------------------------------
 # History of changes:
-# 
+#  by Anatoly  Oreshkin 4.12.2014  
+# export LANG=C added in order to prevent directory(file) name to be in russian encoding  
+# call 'RunTop.sh' added, to get cpu load & memory usage
 #
 #----------------------------------------------------------------------------
 
+export LANG=C
 
 # function to calculate  files size dispersion
 
@@ -109,6 +112,9 @@ TRACEROUTE=${SUB_BASE_DIR}/TRACEROUTE.${REMOTE_HOST}.${LOCAL_HOST}
 COMMENTS=${SUB_BASE_DIR}/COMMENTS.${REMOTE_HOST}.${LOCAL_HOST}
 ABSTRACT=${SUB_BASE_DIR}/ABSTRACT.${REMOTE_HOST}.${LOCAL_HOST}
 LOG=${SUB_BASE_DIR}/LOG.BBCP.${REMOTE_HOST}.${LOCAL_HOST}
+LOGTOP=${SUB_BASE_DIR}/TOP.${LOCAL_HOST}.${REMOTE_HOST}
+SYSCTL=/sbin/sysctl
+INTERVAL=5m # interval  to run 'top' command
 
 #
 # Parameters of BBCP
@@ -162,20 +168,48 @@ fi
 # comments
 
 echo $comments > ${COMMENTS}
-echo "bbcp tuning parameters:" >> ${COMMENTS}
+# Kernel TCP/IP parameters
+
+cat <<END
+Current kernel TCP/IP parameters:
+
+------------------------------------------------------
+`${SYSCTL} -a | egrep "\.rmem|\.wmem|tcp_rmem|tcp_wmem"`
+------------------------------------------------------
+
+Please make sure the same parameters to be configured on remote host '${REMOTE_HOST}'
+END
+
+echo "Current kernel tcp/ip  parameters:" >> ${COMMENTS}
+${SYSCTL} -a | egrep "\.rmem|\.wmem|tcp_rmem|tcp_wmem" >> ${COMMENTS}
+echo >> ${COMMENTS}
+echo "BBCP tuning parameters:" >> ${COMMENTS}
 cat  ${BBCPConfig} >> ${COMMENTS}
  
 # fill in ABSTRACT content 
 echo "Start time = `date`" >> ${ABSTRACT}
 echo "Command line = ${COMMAND_LINE}" >> ${ABSTRACT}
 
+#----------------------------------------
+# start RunTop.sh
+#----------------------------------------
+
+echo
+echo "Starting RunTop.sh in background ..."
+echo 
+
+RunTop.sh ${LOGTOP} ${INTERVAL} &
+# PID of RunTop.sh process
+TOPPID=$!
+
+
 #
 #  transferring data from  remote host to local host
 #
 
    cat <<END
-
  Beginning  data  transfer from  remote host ${REMOTE_HOST} to local host ${LOCAL_HOST} ...  
+
  Start time =  `date`
  Command line = ${COMMAND_LINE}
  Remote host name = ${REMOTE_HOST}
@@ -186,6 +220,11 @@ echo "Command line = ${COMMAND_LINE}" >> ${ABSTRACT}
 END
 
 STARTTIME=$(date +"%s")
+
+#-----------------------------------------------
+#           start BBCP
+#-----------------------------------------------
+
 
 if ( ${COMMAND_LINE} ); then
 # data transfer success
@@ -268,11 +307,14 @@ echo " traceroute ${REMOTE_HOST} ..."
 traceroute ${REMOTE_HOST}  > ${TRACEROUTE}
 
     cat <<END
- End time =  `date`"
+ End time =  `date`
 
  End of script $0"
- The Log is available at ${LOG_FILE} "
+ The Log is available at ${LOG_FILE} 
 END
 
-) 2>& 1 | tee ${LOG_FILE}
 rm -f ${FileList}
+CHILDPID=`pgrep -P ${TOPPID}`
+kill -9  ${CHILDPID} ${TOPPID}
+
+) 2>& 1 | tee ${LOG_FILE}

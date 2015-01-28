@@ -15,10 +15,10 @@ where:
     BBCPConfig -- a file (full path) for bbcp tcp tuning
     BaseDir -- directory (full path) where the script CopyData.bbcp creates subdirectory to store input and logging information
     SourceDirectory -- directory or single file (full path) containing files to be transferred to remote host. This directory is created 
-                      using script 'create-test-file-dispersion.sh' (or create-test-file-sigma.sh). 
+                      using script 'create-test-directory.sh'.
                       Files sizes are normally distributed.
-                      Script 'create-test-file-dispersion.sh' can be found on the page
-                              https://github.com/itmo-infocom/BigData/
+                      Script 'create-test-directory.sh' can be found on the page
+                              https://github.com/itmo-infocom/BigData/test-data
     RemoteUser -- remote user on remote host, if omitted, local user selected
     RemoteHost -- remote host that data to be transferred to
     DestinationDirectory/dev/null -- directory (full path) on remote host where transferred data to be written. This 
@@ -57,30 +57,14 @@ total number of measurements:  k = n * m
 On each mesurement with a pair of 'number_of_tcp_streams & tcp_window_size' the script Wrapper-CopyData.bbcp does the 
 following steps:
 
-1.  creates temporary file <SYSCTLFILE> with such content:
 
-net.ipv4.tcp_mtu_probing = 1
-net.ipv4.tcp_congestion_control = htcp
-net.core.netdev_max_backlog = 30000
-net.core.rmem_max = <tcp_window_size>
-net.core.wmem_max = <tcp_window_size>
-net.ipv4.tcp_rmem = 4096 87380 <tcp_window_size>
-net.ipv4.tcp_wmem = 4096 65536 <tcp_window_size>
-
-2. Run command sysctl -p <SYSCTLFILE>
-
-3. Creates temporary config file for bbcp <BBCPConfigTMP> by adding to source config file  <BBCPConfig>  2 lines:
+1. Creates temporary config file for bbcp <BBCPConfigTMP> by adding to source config file  <BBCPConfig>  2 lines:
 
 --windowsz <tcp_window_size>
 --streams <number_of_tcp_streams> 
 
-4. Adds to comments the following line:
 
-tcp parameters: net.core.rmem_max = <tcp_window_size> net.core.wmem_max = <tcp_window_size> net.ipv4.tcp_rmem = 4096 87380 <tcp_window_size>  net.ipv4.tcp_wmem = 4096 65536 <tcp_window_size>
-
-5. calls the script CopyData.bbcp with the parameters:
+2. calls the script CopyData.bbcp with the parameters:
 
    CopyData.bbcp <BBCPConfigTMP> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> <Comments>
 
-
-  
