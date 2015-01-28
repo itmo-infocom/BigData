@@ -12,9 +12,13 @@
 #---------------------------------------------------------------------------
 # History of changes:
 # 
+# by A. Oreshkin Thu Dec  5 18:55:17 MSK 2014
+# deleted configuring kernel tcp/ip parameters using 'sysctl' command
+# kernel tcp/ip parameters should be configured by 'root' user outside this script
 #
 #----------------------------------------------------------------------------
 
+export LANG=C
 
 #--------------------------------------------------------------
 #
@@ -112,10 +116,6 @@ tcpwinsizes=( ${line2} )
 #echo "tcp streams = ${nstreams[@]}"
 #echo "tcp window sizes = ${tcpwinsizes[@]}" 
 
-# file for sysctl command
-SYSCTLFILE=/tmp/sysctl.$$
-# sysctl command
-SYSCTL="/sbin/sysctl"
 
 # temporary bbcp configuration file
 BBFTPConfigTMP=/tmp/bbftpconfig.$$
@@ -128,27 +128,6 @@ for (( k=0; k<${#nstreams[@]}; k++)); do
 
   for (( j=0; j<${#tcpwinsizes[@]}; j++)); do
 
-    #
-    # create sysctl file for sysctl command
-    #
-
-     # recommended for hosts with jumbo frames enabled
-      echo "net.ipv4.tcp_mtu_probing = 1" > ${SYSCTLFILE}
-     # recommended default congestion control is htcp
-      echo "net.ipv4.tcp_congestion_control = htcp" >> ${SYSCTLFILE}
-     # increase the length of the processor input queue
-      echo "net.core.netdev_max_backlog = 30000" >> ${SYSCTLFILE}
-      #  increase TCP max buffer size      
-      # set tcp window size for reading
-      echo "net.core.rmem_max = ${tcpwinsizes[j]}" >> ${SYSCTLFILE}
-     # set tcp window size for writing
-      echo "net.core.wmem_max = ${tcpwinsizes[j]}" >> ${SYSCTLFILE}
-   #   increase Linux autotuning TCP buffer limits 
-   # min, default, and max number of bytes to use
-      echo "net.ipv4.tcp_rmem = 4096 87380 ${tcpwinsizes[j]}" >> ${SYSCTLFILE}
-      echo "net.ipv4.tcp_wmem = 4096 65536 ${tcpwinsizes[j]}" >> ${SYSCTLFILE}   
-     # set kernel parameters
-     ${SYSCTL} -p ${SYSCTLFILE}  
       
     #
     # create temporary bbftp configuration file
@@ -163,21 +142,18 @@ for (( k=0; k<${#nstreams[@]}; k++)); do
       echo "setsendwinsize  ${TCPWINSZE}" >> ${BBFTPConfigTMP}
       echo "setnbstream  ${nstreams[k]}" >> ${BBFTPConfigTMP}
       echo
-   #
-   # add to comments tcp parameters
-   #
-       Comments2="${Comments} tcp parameters: net.core.rmem_max = ${tcpwinsizes[j]} net.core.wmem_max = ${tcpwinsizes[j]} net.ipv4.tcp_rmem = 4096 87380 ${tcpwinsizes[j]} net.ipv4.tcp_wmem = 4096 65536 ${tcpwinsizes[j]}"
+
       #
       # call script CopyData.bbftp
       #
       echo
 
-    CopyData.bbftp ${BBFTPConfigTMP} ${BASE_DIR} ${SourceDirectory} ${REMOTE_USER}@${REMOTE_HOST} ${DestinationDirectory} ${Comments2}
+    CopyData.bbftp ${BBFTPConfigTMP} ${BASE_DIR} ${SourceDirectory} ${REMOTE_USER}@${REMOTE_HOST} ${DestinationDirectory} ${Comments}
 
   done
 done
 
-rm -f ${SYSCTLFILE} ${BBFTPConfigTMP} ${TMPPARAM}
+rm -f  ${BBFTPConfigTMP} ${TMPPARAM}
 
    cat <<END
 

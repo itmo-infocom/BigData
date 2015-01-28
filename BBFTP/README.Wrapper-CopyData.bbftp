@@ -55,19 +55,7 @@ total number of measurements:  k = n * m
 
 On each mesurement with a pair of 'number_of_tcp_streams & tcp_window_size' the script Wrapper-CopyData.bbftp does the following steps:
 
-1.  creates temporary file <SYSCTLFILE> with such content:
-
-net.ipv4.tcp_mtu_probing = 1
-net.ipv4.tcp_congestion_control = htcp
-net.core.netdev_max_backlog = 30000
-net.core.rmem_max = <tcp_window_size>
-net.core.wmem_max = <tcp_window_size>
-net.ipv4.tcp_rmem = 4096 87380 <tcp_window_size>
-net.ipv4.tcp_wmem = 4096 65536 <tcp_window_size>
-
-2. Runs command sysctl -p <SYSCTLFILE>
-
-3. Converts <tcp_window_size> into Kbytes, creates temporary config file for bbftp <BBFTPConfigTMP> by 
+1. Converts <tcp_window_size> into Kbytes, creates temporary config file for bbftp <BBFTPConfigTMP> by 
 adding to source config file  <BBFTPConfig>  4 lines:
 
 setbuffersize   <tcp_window_size_in_Kbytes>
@@ -75,13 +63,7 @@ setrecvwinsize  <tcp_window_size_in_Kbytes>
 setsendwinsize  <tcp_window_size_in_Kbytes>
 setnbstream  <number_of_tcp_streams>
 
-4. Adds to comments the following line:
 
-tcp parameters: net.core.rmem_max = <tcp_window_size> net.core.wmem_max = <tcp_window_size> net.ipv4.tcp_rmem = 4096 87380 <tcp_window_size> net.ipv4.tcp_wmem = 4096 <tcp_window_size>
-
-5. calls the script CopyData.bbftp with the parameters:
+2. calls the script CopyData.bbftp with the parameters:
 
    CopyData.bbftp <BBFTPConfigTMP> <BaseDir> <SourceDirectory> [<RemoteUser>@]<RemoteHost> <DestinationDirectory/dev/null> <Comments>
-
-
-  

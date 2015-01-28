@@ -6,7 +6,7 @@ using utility 'bbftp' over Internet.
 Description of bbftp parameters can be found on the page 
 
 http://doc.in2p3.fr/bbftp/doc.3.2.1.html
-and also using "man bbftp" "man bbftpd" 
+and also using "man bbftp" and "man bbftpd" 
 
 
 This script is run with the following input parameters:
@@ -28,6 +28,13 @@ where:
     Comments -- your comments, optional parameter
  
 
+This script invokes the script 'RunTop.sh' which runs command 'top -ibn 1' with specified interval.
+The data privided by 'RunTop.sh' may be used to evaluate CPU & Memory consumption.
+Kernel tcp/ip parameters should be set up beforehand under user 'root' to reach maximum throughput 
+depending of the communication line bandwidth.
+
+The script 'RunTop.sh' can be found on the page https://github.com/itmo-infocom/BigData/test-data
+
 The script CopyData.bbftp creates under directory <BaseDir> subdirectory with name 
 
 CopyDataR.bbftp.<RemoteHost>.<LocalHost>.<date>_<time>
@@ -39,6 +46,7 @@ in which the following files are created:
  LOG.BBFTP.<RemoteHost>.<LocalHost>
  PING.<RemoteHost>.<LocalHost>
  TRACEROUTE.<RemoteHost>.<LocalHost>
+ TOP.<LocalHost>.<RemoteHost>
  sosreport-<RemoteHost>.<LocalHost>-<date><time>-<hash>.tar.xz
 
 The file ABSTRACT.<RemoteHost>.<LocalHost> has such content:
@@ -62,10 +70,11 @@ The file COMMENTS.<RemoteHost>.<LocalHost> is filled with <Comments> + content o
 The file LOG.BBFTP.<RemoteHost>.<LocalHost> is filled with the output (log) of bbftp.
 The file PING.<RemoteHost>.<LocalHost> is filled with the output of 'ping -c 10 <RemoteHost>'
 The file TRACEROUTE.<RemoteHost>.<LocalHost> is filled with the output of 'traceroute <RemoteHost>'
+The file TOP.<LocalHost>.<RemoteHost> is filled with the output of 'RunTop.sh'
 The file sosreport-<RemoteHost>.<LocalHost>-<date><time>-<hash>.tar.xz is created by command
 sosreport --batch --tmp-dir CopyDataR.bbftp.<RemoteHost>.<LocalHost>.<date>_<time> --name <RemoteHost>.<LocalHost>
 
-His script invokes bbftp command which remotely starts a bbftpd daemon on remote host through ssh tunnel (bbftpd -s).
+THis script invokes bbftp command which remotely starts a bbftpd daemon on remote host through ssh tunnel (bbftpd -s).
 
 In bbftp configuration file <bbftp_config_file> one can specify so called "behaviour commands" for bbftp performance 
 tuning:
@@ -75,18 +84,16 @@ setbuffersize "Buffersize"   -- set the size in Kbytes of the buffer used for re
 setnbstream "NumberOfParallelStreams" -- set the number of parallel streams to NumberOfParallelStreams.  
 
 setrecvwinsize "WindowSize" -- set size in Kbytes of the receive TCP window of each stream of the  bbftpd daemon. This also set 
-the send window size of the client to the same value.
-
-setsendwinsize "WindowSize" --  set size in Kbytes of the send TCP window of each stream of the  bbftpd daemon. This also set 
-the receive window size of the client to the same value.
+                               the send window size of the client to the same value.
+setsendwinsize "WindowSize" -- set size in Kbytes of the send TCP window of each stream of the  bbftpd daemon. This also set 
+                               the receive window size of the client to the same value.
 
 ...
 
-Example of bbftp configuration file <bbftp_config_file>
+Example of bbftp configuration file <bbftp_config_file>:
 
 setoption nogzip
 setnbstream 10
 setbuffersize  4096
 setrecvwinsize 4096
 setsendwinsize 4096
-
