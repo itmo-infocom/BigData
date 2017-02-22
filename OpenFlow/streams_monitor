@@ -20,5 +20,5 @@ test -p  /tmp/streams_splitter || mknod  /tmp/streams_splitter p
 
 while true
 do
-	netstat -n | awk '{if (/^tcp .*:('$PORTS') /) print $4" "$5}' > /tmp/streams_splitter
+	netstat -n | awk '{if (/^tcp.*:('$PORTS') /) print $4" "$5}' > /tmp/streams_splitter
 done

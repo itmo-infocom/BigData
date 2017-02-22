@@ -45,8 +45,8 @@ def emptyNet():
     net.addLink( s5, s6 )
     net.addLink( h2, s6 )
 
-    print "Stopping of " + 's5'
-    net.configLinkStatus('s5', 's3', 'down')
+    #print "Stopping of " + 's5'
+    #net.configLinkStatus('s5', 's3', 'down')
     #net.configLinkStatus('s5', 's6', 'down')
     #net.hosts[0].cmd("ping -w 15 10.0.0.2")
     #net.pingAll()

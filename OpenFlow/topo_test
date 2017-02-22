@@ -3,20 +3,20 @@
 echo data flow 1...
 cp streams_splitter_topo.1.1 /tmp/streams_splitter_topo.py
 echo Press ENTER for switching to data flow 2
-read
+read TMP
 echo data flow 2...
 cp streams_splitter_topo.1.2 /tmp/streams_splitter_topo.py
 echo Press ENTER for switching to data flows 1+2
-read
+read TMP
 echo data flow 1+2...
 cp streams_splitter_topo.2.1 /tmp/streams_splitter_topo.py
 echo Press ENTER for switching to data flows 2+1...
-read
+read TMP
 echo data flow 2+1...
 cp streams_splitter_topo.2.2 /tmp/streams_splitter_topo.py
 
 echo Press ENTER for toplogy loop
-read
+read TMP
 echo toplogy loop
 while true
 do

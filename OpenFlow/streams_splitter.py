@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/python
 
 # Copyright (C) 2014 Oleg Sadov
 #
