@@ -6,7 +6,8 @@ then
         exit -1
 fi
 
-PORTS=""
+PORTS="$1"
+shift
 
 while [ $1 ]
 do
@@ -14,7 +15,7 @@ do
 	shift
 done
 
-netstat -n | awk '{if (/^tcp .*:('$PORTS') /) print $4" "$5}'
+netstat -n | awk '{if (/^tcp.*:('$PORTS') /) print $4" "$5}'
 
 test -p  /tmp/streams_splitter || mknod  /tmp/streams_splitter p
 

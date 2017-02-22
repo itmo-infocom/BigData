@@ -6,7 +6,8 @@ then
 	exit -1
 fi
 
-PORTS=""
+PORTS="$1"
+shift
 
 while [ $1 ]
 do
